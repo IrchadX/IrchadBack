@@ -19,25 +19,20 @@ export class UsersService {
         data: {
           first_name: createUserDto.firstName,
           family_name: createUserDto.familyName,
+          email: createUserDto.email,
           phone_number: createUserDto.phoneNumber,
           password: hashedPassword,
-          ...(createUserDto.userTypeId && {
-            userTypeId: BigInt(createUserDto.userTypeId),
-          }),
+          userTypeId: createUserDto.userTypeId ?? null,
         },
       });
 
-      const { password, ...resultWithBigInt } = user;
+      const { password, ...result } = user;
 
-      const result = {
-        ...resultWithBigInt,
-        id: Number(resultWithBigInt.id),
-        userTypeId: resultWithBigInt.userTypeId
-          ? Number(resultWithBigInt.userTypeId)
-          : null,
+      return {
+        ...result,
+        id: Number(result.id),
+        userTypeId: result.userTypeId ? Number(result.userTypeId) : null,
       };
-
-      return result;
     } catch (error) {
       console.error('Error creating user:', error);
       throw new InternalServerErrorException(

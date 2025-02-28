@@ -1,19 +1,19 @@
 -- CreateTable
 CREATE TABLE "user" (
-    "id" BIGSERIAL NOT NULL,
+    "id" SERIAL NOT NULL,
     "created_at" TIMESTAMPTZ(6) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "family_name" VARCHAR,
     "first_name" VARCHAR,
     "phone_number" VARCHAR,
     "password" VARCHAR,
-    "userTypeId" BIGINT,
+    "userTypeId" INTEGER,
 
     CONSTRAINT "user_pkey" PRIMARY KEY ("id")
 );
 
 -- CreateTable
 CREATE TABLE "user_type" (
-    "id" BIGSERIAL NOT NULL,
+    "id" SERIAL NOT NULL,
     "created_at" TIMESTAMPTZ(6) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "type" VARCHAR,
 
