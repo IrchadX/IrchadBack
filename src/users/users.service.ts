@@ -1,26 +1,48 @@
-import { Injectable } from '@nestjs/common';
+/* eslint-disable @typescript-eslint/no-unused-vars */
+/* eslint-disable @typescript-eslint/no-unsafe-member-access */
+/* eslint-disable @typescript-eslint/no-unsafe-call */
+/* eslint-disable @typescript-eslint/no-unsafe-assignment */
+import { Injectable, InternalServerErrorException } from '@nestjs/common';
+import { PrismaService } from '../prisma/prisma.service';
 import { CreateUserDto } from './dto/create-user.dto';
-import { UpdateUserDto } from './dto/update-user.dto';
+import * as bcrypt from 'bcrypt';
 
 @Injectable()
 export class UsersService {
-  create(createUserDto: CreateUserDto) {
-    return 'This action adds a new user';
-  }
+  constructor(private prisma: PrismaService) {}
 
-  findAll() {
-    return `This action returns all users`;
-  }
+  async create(createUserDto: CreateUserDto) {
+    try {
+      const hashedPassword = await bcrypt.hash(createUserDto.password, 10);
 
-  findOne(id: number) {
-    return `This action returns a #${id} user`;
-  }
+      const user = await this.prisma.user.create({
+        data: {
+          first_name: createUserDto.firstName,
+          family_name: createUserDto.familyName,
+          phone_number: createUserDto.phoneNumber,
+          password: hashedPassword,
+          ...(createUserDto.userTypeId && {
+            userTypeId: BigInt(createUserDto.userTypeId),
+          }),
+        },
+      });
 
-  update(id: number, updateUserDto: UpdateUserDto) {
-    return `This action updates a #${id} user`;
-  }
+      const { password, ...resultWithBigInt } = user;
 
-  remove(id: number) {
-    return `This action removes a #${id} user`;
+      const result = {
+        ...resultWithBigInt,
+        id: Number(resultWithBigInt.id),
+        userTypeId: resultWithBigInt.userTypeId
+          ? Number(resultWithBigInt.userTypeId)
+          : null,
+      };
+
+      return result;
+    } catch (error) {
+      console.error('Error creating user:', error);
+      throw new InternalServerErrorException(
+        'Failed to create user: ' + error.message,
+      );
+    }
   }
 }
