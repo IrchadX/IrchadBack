@@ -16,9 +16,13 @@ model user {
   phone_number String?   @db.VarChar
   email        String?   @unique @db.VarChar  
   password     String?   @db.VarChar
+  age          Int?      
+  sex          String?   @db.VarChar 
+  street       String?   @db.VarChar 
   userTypeId   Int?
   userType     user_type? @relation(fields: [userTypeId], references: [id], onDelete: SetNull)
 }
+
 
 model user_type {
   id         Int      @id @default(autoincrement())
