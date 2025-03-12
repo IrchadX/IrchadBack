@@ -2,9 +2,15 @@
 /* eslint-disable @typescript-eslint/no-unsafe-member-access */
 /* eslint-disable @typescript-eslint/no-unsafe-call */
 /* eslint-disable @typescript-eslint/no-unsafe-assignment */
-import { Injectable, InternalServerErrorException } from '@nestjs/common';
+
+import {
+  Injectable,
+  InternalServerErrorException,
+  NotFoundException,
+} from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateUserDto } from './dto/create-user.dto';
+import { UpdateUserDto } from './dto/update-user.dto';
 import * as bcrypt from 'bcrypt';
 
 @Injectable()
@@ -23,6 +29,10 @@ export class UsersService {
           phone_number: createUserDto.phoneNumber,
           password: hashedPassword,
           userTypeId: createUserDto.userTypeId ?? null,
+          age: createUserDto.age ?? null,
+          sex: createUserDto.sex ?? null,
+          city: createUserDto.city ?? null,
+          street: createUserDto.street ?? null,
         },
       });
 
@@ -32,11 +42,68 @@ export class UsersService {
         ...result,
         id: Number(result.id),
         userTypeId: result.userTypeId ? Number(result.userTypeId) : null,
+        age: result.age ? Number(result.age) : null,
       };
     } catch (error) {
       console.error('Error creating user:', error);
       throw new InternalServerErrorException(
         'Failed to create user: ' + error.message,
+      );
+    }
+  }
+
+  async findAll() {
+    try {
+      const users = await this.prisma.user.findMany({
+        include: {
+          userType: true,
+        },
+      });
+
+      return users.map(({ password, userType, ...user }) => ({
+        ...user,
+        userType: userType ? userType.type : 'N/A',
+      }));
+    } catch (error) {
+      console.error('Error fetching users:', error);
+      throw new InternalServerErrorException('Failed to fetch users');
+    }
+  }
+
+  async update(id: number, updateUserDto: UpdateUserDto) {
+    try {
+      const existingUser = await this.prisma.user.findUnique({ where: { id } });
+      if (!existingUser) {
+        throw new NotFoundException(`User with ID ${id} not found`);
+      }
+
+      let hashedPassword = existingUser.password;
+      if (updateUserDto.password) {
+        hashedPassword = await bcrypt.hash(updateUserDto.password, 10);
+      }
+
+      const updatedUser = await this.prisma.user.update({
+        where: { id },
+        data: {
+          first_name: updateUserDto.firstName ?? existingUser.first_name,
+          family_name: updateUserDto.familyName ?? existingUser.family_name,
+          email: updateUserDto.email ?? existingUser.email,
+          phone_number: updateUserDto.phoneNumber ?? existingUser.phone_number,
+          password: hashedPassword,
+          userTypeId: updateUserDto.userTypeId ?? existingUser.userTypeId,
+          age: updateUserDto.age ?? existingUser.age,
+          sex: updateUserDto.sex ?? existingUser.sex,
+          city: updateUserDto.city ?? existingUser.city,
+          street: updateUserDto.street ?? existingUser.street,
+        },
+      });
+
+      const { password, ...result } = updatedUser;
+      return result;
+    } catch (error) {
+      console.error('Error updating user:', error);
+      throw new InternalServerErrorException(
+        'Failed to update user: ' + error.message,
       );
     }
   }

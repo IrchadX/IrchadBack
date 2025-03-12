@@ -1,6 +1,13 @@
 /* eslint-disable @typescript-eslint/no-unsafe-call */
 // src/users/dto/create-user.dto.ts
-import { IsOptional, IsString, MinLength } from 'class-validator';
+import {
+  IsInt,
+  IsOptional,
+  IsString,
+  Max,
+  Min,
+  MinLength,
+} from 'class-validator';
 
 export class CreateUserDto {
   @IsOptional()
@@ -23,6 +30,23 @@ export class CreateUserDto {
   @MinLength(6)
   password: string;
 
+  @IsInt()
+  @Min(0)
+  @Max(120)
+  @IsOptional()
+  age?: number;
+
+  @IsString()
+  @IsOptional()
+  sex?: string;
+
+  @IsString()
+  @IsOptional()
+  city?: string;
+
+  @IsString()
+  @IsOptional()
+  street?: string;
   @IsOptional()
   userTypeId?: number;
 }

@@ -18,6 +18,7 @@ model user {
   password     String?   @db.VarChar
   age          Int?      
   sex          String?   @db.VarChar 
+  city         String?   @db.VarChar  
   street       String?   @db.VarChar 
   userTypeId   Int?
   userType     user_type? @relation(fields: [userTypeId], references: [id], onDelete: SetNull)
