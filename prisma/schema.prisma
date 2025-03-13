@@ -31,3 +31,4 @@ model user_type {
   type       String?  @db.VarChar
   user       user[]
 }
+//testets
