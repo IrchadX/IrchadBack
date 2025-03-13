@@ -128,4 +128,33 @@ export class UsersService {
       );
     }
   }
+
+  // User by ID fetching endpoint
+  async findOne(id: number) {
+    try {
+      const user = await this.prisma.user.findUnique({
+        where: { id },
+        include: {
+          userType: true,
+        },
+      });
+
+      if (!user) {
+        throw new NotFoundException(`User with ID ${id} not found`);
+      }
+
+      const { password, userType, ...result } = user;
+
+      return {
+        ...result,
+        userType: userType ? userType.type : 'N/A',
+      };
+    } catch (error) {
+      console.error(`Error fetching user with ID ${id}:`, error);
+      if (error instanceof NotFoundException) {
+        throw error;
+      }
+      throw new InternalServerErrorException('Failed to fetch user');
+    }
+  }
 }

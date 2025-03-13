@@ -28,6 +28,11 @@ export class UsersController {
     return this.usersService.findAll();
   }
 
+  @Get(':id')
+  findOne(@Param('id', ParseIntPipe) id: number) {
+    return this.usersService.findOne(id);
+  }
+
   @Patch(':id')
   async update(@Param('id') id: string, @Body() updateUserDto: UpdateUserDto) {
     return this.usersService.update(Number(id), updateUserDto);
@@ -38,4 +43,3 @@ export class UsersController {
     return this.usersService.remove(id);
   }
 }
-//test
