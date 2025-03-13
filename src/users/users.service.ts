@@ -17,6 +17,7 @@ import * as bcrypt from 'bcrypt';
 export class UsersService {
   constructor(private prisma: PrismaService) {}
 
+  //User Creation endpoint
   async create(createUserDto: CreateUserDto) {
     try {
       const hashedPassword = await bcrypt.hash(createUserDto.password, 10);
@@ -52,6 +53,7 @@ export class UsersService {
     }
   }
 
+  //User Fetching endpoint
   async findAll() {
     try {
       const users = await this.prisma.user.findMany({
@@ -70,6 +72,7 @@ export class UsersService {
     }
   }
 
+  //user update endpoint
   async update(id: number, updateUserDto: UpdateUserDto) {
     try {
       const existingUser = await this.prisma.user.findUnique({ where: { id } });
@@ -77,10 +80,7 @@ export class UsersService {
         throw new NotFoundException(`User with ID ${id} not found`);
       }
 
-      let hashedPassword = existingUser.password;
-      if (updateUserDto.password) {
-        hashedPassword = await bcrypt.hash(updateUserDto.password, 10);
-      }
+      console.log('Update Data:', updateUserDto);
 
       const updatedUser = await this.prisma.user.update({
         where: { id },
@@ -89,14 +89,15 @@ export class UsersService {
           family_name: updateUserDto.familyName ?? existingUser.family_name,
           email: updateUserDto.email ?? existingUser.email,
           phone_number: updateUserDto.phoneNumber ?? existingUser.phone_number,
-          password: hashedPassword,
-          userTypeId: updateUserDto.userTypeId ?? existingUser.userTypeId,
           age: updateUserDto.age ?? existingUser.age,
           sex: updateUserDto.sex ?? existingUser.sex,
           city: updateUserDto.city ?? existingUser.city,
           street: updateUserDto.street ?? existingUser.street,
+          userTypeId: updateUserDto.userTypeId ?? existingUser.userTypeId,
         },
       });
+
+      console.log('Updated User:', updatedUser);
 
       const { password, ...result } = updatedUser;
       return result;
@@ -104,6 +105,26 @@ export class UsersService {
       console.error('Error updating user:', error);
       throw new InternalServerErrorException(
         'Failed to update user: ' + error.message,
+      );
+    }
+  }
+
+  //User deletion endpoint
+  async remove(id: number) {
+    try {
+      const user = await this.prisma.user.findUnique({ where: { id } });
+
+      if (!user) {
+        throw new NotFoundException(`User with ID ${id} not found`);
+      }
+
+      await this.prisma.user.delete({ where: { id } });
+
+      return { message: `User with ID ${id} successfully deleted` };
+    } catch (error) {
+      console.error('Error deleting user:', error);
+      throw new InternalServerErrorException(
+        'Failed to delete user: ' + error.message,
       );
     }
   }

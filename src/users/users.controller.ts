@@ -1,5 +1,15 @@
+/* eslint-disable @typescript-eslint/no-unsafe-return */
 // src/users/users.controller.ts
-import { Body, Controller, Post, Get, Patch, Param } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Post,
+  Get,
+  Patch,
+  Param,
+  Delete,
+  ParseIntPipe,
+} from '@nestjs/common';
 import { UsersService } from './users.service';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
@@ -21,5 +31,10 @@ export class UsersController {
   @Patch(':id')
   async update(@Param('id') id: string, @Body() updateUserDto: UpdateUserDto) {
     return this.usersService.update(Number(id), updateUserDto);
+  }
+
+  @Delete(':id')
+  async remove(@Param('id', ParseIntPipe) id: number) {
+    return this.usersService.remove(id);
   }
 }
