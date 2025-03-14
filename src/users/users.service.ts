@@ -2,7 +2,6 @@
 /* eslint-disable @typescript-eslint/no-unsafe-member-access */
 /* eslint-disable @typescript-eslint/no-unsafe-call */
 /* eslint-disable @typescript-eslint/no-unsafe-assignment */
-
 import {
   Injectable,
   InternalServerErrorException,
@@ -21,7 +20,6 @@ export class UsersService {
   async create(createUserDto: CreateUserDto) {
     try {
       const hashedPassword = await bcrypt.hash(createUserDto.password, 10);
-
       const user = await this.prisma.user.create({
         data: {
           first_name: createUserDto.firstName,
