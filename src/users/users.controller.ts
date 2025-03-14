@@ -9,6 +9,7 @@ import {
   Param,
   Delete,
   ParseIntPipe,
+  Query,
 } from '@nestjs/common';
 import { UsersService } from './users.service';
 import { CreateUserDto } from './dto/create-user.dto';
@@ -23,9 +24,30 @@ export class UsersController {
     return this.usersService.create(createUserDto);
   }
 
+  // Updated controller endpoint
   @Get()
-  async findAll() {
-    return this.usersService.findAll();
+  async getUsers(
+    @Query('search') search?: string,
+    @Query('sex') sex?: string,
+    @Query('city') city?: string,
+    @Query('ageGroup') ageGroup?: string,
+    @Query('userType') userType?: string,
+  ) {
+    const filters = {
+      sex,
+      city,
+      ageGroup,
+      userType,
+    };
+
+    // Remove undefined values
+    Object.keys(filters).forEach((key) => {
+      if (filters[key] === undefined) {
+        delete filters[key];
+      }
+    });
+
+    return this.usersService.findAll(search, filters);
   }
 
   @Get(':id')
