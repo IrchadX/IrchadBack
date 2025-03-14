@@ -16,13 +16,14 @@ model user {
   phone_number String?   @db.VarChar
   email        String?   @unique @db.VarChar  
   password     String?   @db.VarChar
-  age          Int?      
+  birth_date   DateTime?  
   sex          String?   @db.VarChar 
   city         String?   @db.VarChar  
   street       String?   @db.VarChar 
   userTypeId   Int?
   userType     user_type? @relation(fields: [userTypeId], references: [id], onDelete: SetNull)
 }
+
 
 
 model user_type {

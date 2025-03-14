@@ -16,7 +16,7 @@ import * as bcrypt from 'bcrypt';
 export class UsersService {
   constructor(private prisma: PrismaService) {}
 
-  //User Creation endpoint
+  // User Creation endpoint
   async create(createUserDto: CreateUserDto) {
     try {
       const hashedPassword = await bcrypt.hash(createUserDto.password, 10);
@@ -28,20 +28,20 @@ export class UsersService {
           phone_number: createUserDto.phoneNumber,
           password: hashedPassword,
           userTypeId: createUserDto.userTypeId ?? null,
-          age: createUserDto.age ?? null,
+          birth_date: createUserDto.birthDate ?? null,
           sex: createUserDto.sex ?? null,
           city: createUserDto.city ?? null,
           street: createUserDto.street ?? null,
         },
       });
 
-      const { password, ...result } = user;
+      const { password, birth_date, ...result } = user;
 
       return {
         ...result,
         id: Number(result.id),
         userTypeId: result.userTypeId ? Number(result.userTypeId) : null,
-        age: result.age ? Number(result.age) : null,
+        birthDate: birth_date ? birth_date.toISOString().split('T')[0] : null, // Formatting birth date
       };
     } catch (error) {
       console.error('Error creating user:', error);
@@ -51,7 +51,7 @@ export class UsersService {
     }
   }
 
-  //User Fetching endpoint
+  // User Fetching endpoint
   async findAll() {
     try {
       const users = await this.prisma.user.findMany({
@@ -60,9 +60,10 @@ export class UsersService {
         },
       });
 
-      return users.map(({ password, userType, ...user }) => ({
+      return users.map(({ password, birth_date, userType, ...user }) => ({
         ...user,
         userType: userType ? userType.type : 'N/A',
+        birthDate: birth_date ? birth_date.toISOString().split('T')[0] : null, // Formatting birth date
       }));
     } catch (error) {
       console.error('Error fetching users:', error);
@@ -70,7 +71,7 @@ export class UsersService {
     }
   }
 
-  //user update endpoint
+  // User update endpoint
   async update(id: number, updateUserDto: UpdateUserDto) {
     try {
       const existingUser = await this.prisma.user.findUnique({ where: { id } });
@@ -87,7 +88,7 @@ export class UsersService {
           family_name: updateUserDto.familyName ?? existingUser.family_name,
           email: updateUserDto.email ?? existingUser.email,
           phone_number: updateUserDto.phoneNumber ?? existingUser.phone_number,
-          age: updateUserDto.age ?? existingUser.age,
+          birth_date: updateUserDto.birthDate ?? existingUser.birth_date,
           sex: updateUserDto.sex ?? existingUser.sex,
           city: updateUserDto.city ?? existingUser.city,
           street: updateUserDto.street ?? existingUser.street,
@@ -97,8 +98,11 @@ export class UsersService {
 
       console.log('Updated User:', updatedUser);
 
-      const { password, ...result } = updatedUser;
-      return result;
+      const { password, birth_date, ...result } = updatedUser;
+      return {
+        ...result,
+        birthDate: birth_date ? birth_date.toISOString().split('T')[0] : null,
+      };
     } catch (error) {
       console.error('Error updating user:', error);
       throw new InternalServerErrorException(
@@ -107,7 +111,7 @@ export class UsersService {
     }
   }
 
-  //User deletion endpoint
+  // User deletion endpoint
   async remove(id: number) {
     try {
       const user = await this.prisma.user.findUnique({ where: { id } });
@@ -141,11 +145,12 @@ export class UsersService {
         throw new NotFoundException(`User with ID ${id} not found`);
       }
 
-      const { password, userType, ...result } = user;
+      const { password, birth_date, userType, ...result } = user;
 
       return {
         ...result,
         userType: userType ? userType.type : 'N/A',
+        birthDate: birth_date ? birth_date.toISOString().split('T')[0] : null,
       };
     } catch (error) {
       console.error(`Error fetching user with ID ${id}:`, error);

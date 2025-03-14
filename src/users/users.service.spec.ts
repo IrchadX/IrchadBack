@@ -18,6 +18,7 @@ describe('UsersService', () => {
       delete: jest.fn(),
     },
   };
+
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
@@ -41,7 +42,7 @@ describe('UsersService', () => {
       phoneNumber: '1234567890',
       password: 'password123',
       userTypeId: 1,
-      age: 30,
+      birthDate: '1994-05-20',
       sex: 'F',
       city: 'City',
       street: 'Street',
@@ -55,7 +56,7 @@ describe('UsersService', () => {
       phone_number: '1234567890',
       password: hashedPassword,
       userTypeId: 1,
-      age: 30,
+      birth_date: new Date('1994-05-20'),
       sex: 'F',
       city: 'City',
       street: 'Street',
@@ -79,7 +80,7 @@ describe('UsersService', () => {
       email: 'Hind@example.com',
       phone_number: '1234567890',
       userTypeId: 1,
-      age: 30,
+      birthDate: '1994-05-20',
       sex: 'F',
       city: 'City',
       street: 'Street',
@@ -93,12 +94,14 @@ describe('UsersService', () => {
         first_name: 'Hind',
         family_name: 'Dehili',
         email: 'Hind@example.com',
+        birth_date: new Date('1994-05-20'),
       },
       {
         id: 2,
         first_name: 'Zineb',
         family_name: 'Dehili',
         email: 'Zineb@example.com',
+        birth_date: new Date('2000-10-15'),
       },
     ];
     mockPrismaService.user.findMany.mockResolvedValue(users);
@@ -106,23 +109,34 @@ describe('UsersService', () => {
     expect(mockPrismaService.user.findMany).toHaveBeenCalled();
     expect(result).toEqual(
       expect.arrayContaining(
-        users.map((user) => expect.objectContaining(user)),
+        users.map((user) =>
+          expect.objectContaining({
+            id: user.id,
+            first_name: user.first_name,
+            family_name: user.family_name,
+            email: user.email,
+            birthDate: user.birth_date.toISOString().split('T')[0], // Ensure correct formatting
+          }),
+        ),
       ),
     );
   });
 
   it('should update an existing user', async () => {
-    const updateUserDto = { firstName: 'Hindd' };
+    const updateUserDto = { firstName: 'Hindd', birthDate: '1995-06-15' };
     const existingUser = {
       id: 1,
       first_name: 'Hind',
       family_name: 'Dehili',
       email: 'Hind@example.com',
+      birth_date: new Date('1994-05-20'),
     };
     const updatedUser = {
       ...existingUser,
-      first_name: updateUserDto.firstName, // Updated field
+      first_name: updateUserDto.firstName,
+      birth_date: new Date(updateUserDto.birthDate),
     };
+
     mockPrismaService.user.findUnique.mockResolvedValue(existingUser);
     mockPrismaService.user.update.mockResolvedValue(updatedUser);
     const result = await service.update(1, updateUserDto);
@@ -130,16 +144,23 @@ describe('UsersService', () => {
       where: { id: 1 },
       data: expect.objectContaining({
         first_name: updateUserDto.firstName,
+        birth_date: new Date(updateUserDto.birthDate),
       }),
     });
-    // Verify the result matches what we expect
     expect(result.id).toEqual(updatedUser.id);
     expect(result.first_name).toEqual(updatedUser.first_name);
     expect(result.family_name).toEqual(updatedUser.family_name);
     expect(result.email).toEqual(updatedUser.email);
+    expect(result.birthDate).toEqual(updateUserDto.birthDate);
   });
+
   it('should delete a user', async () => {
-    const userToDelete = { id: 1, first_name: 'Hind', family_name: 'Dehili' };
+    const userToDelete = {
+      id: 1,
+      first_name: 'Hind',
+      family_name: 'Dehili',
+      birth_date: new Date('1994-05-20'),
+    };
     mockPrismaService.user.findUnique.mockResolvedValue(userToDelete);
     mockPrismaService.user.delete.mockResolvedValue(userToDelete);
     const result = await service.remove(1);
@@ -156,6 +177,7 @@ describe('UsersService', () => {
       first_name: 'Hind',
       family_name: 'Dehili',
       email: 'Hind@example.com',
+      birth_date: new Date('1994-05-20'),
     };
     mockPrismaService.user.findUnique.mockResolvedValue(user);
     const result = await service.findOne(1);
@@ -167,5 +189,8 @@ describe('UsersService', () => {
     expect(result.first_name).toEqual(user.first_name);
     expect(result.family_name).toEqual(user.family_name);
     expect(result.email).toEqual(user.email);
+    expect(result.birthDate).toEqual(
+      user.birth_date.toISOString().split('T')[0],
+    );
   });
 });
