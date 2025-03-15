@@ -63,4 +63,13 @@ export class UsersController {
   async remove(@Param('id', ParseIntPipe) id: number) {
     return this.usersService.remove(id);
   }
+
+  @Patch(':id/update-password')
+  async updatePassword(
+    @Param('id', ParseIntPipe) id: number,
+    @Body('currentPassword') currentPassword: string,
+    @Body('newPassword') newPassword: string,
+  ) {
+    return this.usersService.updatePassword(id, currentPassword, newPassword);
+  }
 }

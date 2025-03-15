@@ -16,6 +16,45 @@ import * as bcrypt from 'bcrypt';
 export class UsersService {
   constructor(private prisma: PrismaService) {}
 
+  async updatePassword(
+    id: number,
+    currentPassword: string,
+    newPassword: string,
+  ) {
+    try {
+      const user = await this.prisma.user.findUnique({ where: { id } });
+
+      if (!user) {
+        throw new NotFoundException(`User with ID ${id} not found`);
+      }
+
+      // Verify the current password
+      const isPasswordValid = await bcrypt.compare(
+        currentPassword,
+        user.password,
+      );
+      if (!isPasswordValid) {
+        throw new InternalServerErrorException('Current password is incorrect');
+      }
+
+      // Hash the new password
+      const hashedPassword = await bcrypt.hash(newPassword, 10);
+
+      // Update the user's password
+      await this.prisma.user.update({
+        where: { id },
+        data: { password: hashedPassword },
+      });
+
+      return { message: 'Password updated successfully' };
+    } catch (error) {
+      console.error('Error updating password:', error);
+      throw new InternalServerErrorException(
+        'Failed to update password: ' + error.message,
+      );
+    }
+  }
+
   // User Creation endpoint
   async create(createUserDto: CreateUserDto) {
     try {
