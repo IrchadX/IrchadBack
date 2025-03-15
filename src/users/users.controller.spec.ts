@@ -52,7 +52,6 @@ describe('UsersController', () => {
       email: 'lh_dehili@esi.dz',
       password: '123456',
       phoneNumber: '0555555555',
-      age: 25,
     };
     const result = await controller.create(dto);
     expect(usersService.create).toHaveBeenCalledWith(dto);
@@ -61,7 +60,7 @@ describe('UsersController', () => {
   });
 
   it('should return an array of users', async () => {
-    await controller.findAll();
+    await controller.getUsers();
     expect(usersService.findAll).toHaveBeenCalled();
   });
 
@@ -78,7 +77,6 @@ describe('UsersController', () => {
       email: 'lh_dehili@esi.dz',
       password: '123456',
       phoneNumber: '0555555555',
-      age: 25,
     };
     const result = await controller.update('1', dto);
     expect(usersService.update).toHaveBeenCalledWith(1, dto);

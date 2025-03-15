@@ -123,7 +123,7 @@ describe('UsersService', () => {
   });
 
   it('should update an existing user', async () => {
-    const updateUserDto = { firstName: 'Hindd', birthDate: '1995-06-15' };
+    const updateUserDto = { firstName: 'Hindd', familyName:'Dehilii' };
     const existingUser = {
       id: 1,
       first_name: 'Hind',
@@ -134,7 +134,7 @@ describe('UsersService', () => {
     const updatedUser = {
       ...existingUser,
       first_name: updateUserDto.firstName,
-      birth_date: new Date(updateUserDto.birthDate),
+      family_name: updateUserDto.familyName,
     };
 
     mockPrismaService.user.findUnique.mockResolvedValue(existingUser);
@@ -144,14 +144,13 @@ describe('UsersService', () => {
       where: { id: 1 },
       data: expect.objectContaining({
         first_name: updateUserDto.firstName,
-        birth_date: new Date(updateUserDto.birthDate),
+        family_name: updatedUser.family_name,
       }),
     });
     expect(result.id).toEqual(updatedUser.id);
     expect(result.first_name).toEqual(updatedUser.first_name);
     expect(result.family_name).toEqual(updatedUser.family_name);
     expect(result.email).toEqual(updatedUser.email);
-    expect(result.birthDate).toEqual(updateUserDto.birthDate);
   });
 
   it('should delete a user', async () => {
