@@ -24,7 +24,6 @@ export class UsersController {
     return this.usersService.create(createUserDto);
   }
 
-  // Updated controller endpoint
   @Get()
   async getUsers(
     @Query('search') search?: string,

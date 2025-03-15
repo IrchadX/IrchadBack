@@ -28,7 +28,9 @@ export class UsersService {
           phone_number: createUserDto.phoneNumber,
           password: hashedPassword,
           userTypeId: createUserDto.userTypeId ?? null,
-          birth_date: createUserDto.birthDate ?? null,
+          birth_date: createUserDto.birthDate
+            ? new Date(createUserDto.birthDate)
+            : null,
           sex: createUserDto.sex ?? null,
           city: createUserDto.city ?? null,
           street: createUserDto.street ?? null,
@@ -52,70 +54,26 @@ export class UsersService {
   }
 
   // User Fetching endpoint
-  async findAll(search?: string, filters?: any) {
+  async findAll(
+    search: string | undefined,
+    filters: {
+      sex: string | undefined;
+      city: string | undefined;
+      ageGroup: string | undefined;
+      userType: string | undefined;
+    },
+  ) {
     try {
-      const whereClause: any = {};
-
-      // Search by name
-      if (search) {
-        whereClause.OR = [
-          { family_name: { contains: search, mode: 'insensitive' } },
-          { first_name: { contains: search, mode: 'insensitive' } },
-        ];
-      }
-
-      // Filter by sex
-      if (filters?.sex) {
-        whereClause.sex = filters.sex;
-      }
-
-      // Filter by age groups
-      if (filters?.ageGroup) {
-        const today = new Date();
-        const getDateYearsAgo = (years: number) =>
-          new Date(
-            today.getFullYear() - years,
-            today.getMonth(),
-            today.getDate(),
-          );
-
-        if (filters.ageGroup === 'under18') {
-          whereClause.birth_date = { gte: getDateYearsAgo(18) };
-        } else if (filters.ageGroup === '18-30') {
-          whereClause.birth_date = {
-            gte: getDateYearsAgo(30),
-            lte: getDateYearsAgo(18),
-          };
-        } else if (filters.ageGroup === '31-50') {
-          whereClause.birth_date = {
-            gte: getDateYearsAgo(50),
-            lte: getDateYearsAgo(31),
-          };
-        } else if (filters.ageGroup === 'over50') {
-          whereClause.birth_date = { lte: getDateYearsAgo(50) };
-        }
-      }
-
-      // Filter by city
-      if (filters?.city) {
-        whereClause.city = filters.city;
-      }
-
-      // Filter by user type
-      if (filters?.userType) {
-        whereClause.userType = { type: filters.userType };
-      }
-
-      // Fetch users with filters
       const users = await this.prisma.user.findMany({
-        where: whereClause,
-        include: { userType: true },
+        include: {
+          userType: true,
+        },
       });
 
       return users.map(({ password, birth_date, userType, ...user }) => ({
         ...user,
         userType: userType ? userType.type : 'N/A',
-        birthDate: birth_date ? birth_date.toISOString().split('T')[0] : null,
+        birthDate: birth_date ? birth_date.toISOString().split('T')[0] : null, // Formatting birth date
       }));
     } catch (error) {
       console.error('Error fetching users:', error);
