@@ -54,26 +54,82 @@ export class UsersService {
   }
 
   // User Fetching endpoint
-  async findAll(
-    search: string | undefined,
-    filters: {
-      sex: string | undefined;
-      city: string | undefined;
-      ageGroup: string | undefined;
-      userType: string | undefined;
-    },
-  ) {
+  async findAll(search?: string, filters?: any) {
     try {
+      const whereClause: any = {};
+
+      // Search by name
+      if (search) {
+        whereClause.OR = [
+          { family_name: { contains: search, mode: 'insensitive' } },
+          { first_name: { contains: search, mode: 'insensitive' } },
+        ];
+      }
+
+      // Filter by sex
+      if (filters?.sex) {
+        whereClause.sex = filters.sex;
+      }
+
+      // Filter by age groups
+      if (filters?.ageGroup) {
+        const today = new Date();
+        const getDateYearsAgo = (years: number) =>
+          new Date(
+            today.getFullYear() - years,
+            today.getMonth(),
+            today.getDate(),
+          );
+
+        if (filters.ageGroup === 'under18') {
+          whereClause.birth_date = { gte: getDateYearsAgo(18) };
+        } else if (filters.ageGroup === '18-30') {
+          whereClause.birth_date = {
+            gte: getDateYearsAgo(30),
+            lte: getDateYearsAgo(18),
+          };
+        } else if (filters.ageGroup === '31-50') {
+          whereClause.birth_date = {
+            gte: getDateYearsAgo(50),
+            lte: getDateYearsAgo(31),
+          };
+        } else if (filters.ageGroup === 'over50') {
+          whereClause.birth_date = { lte: getDateYearsAgo(50) };
+        }
+      }
+
+      // Filter by city
+      if (filters?.city) {
+        whereClause.city = filters.city;
+      }
+
+      // Filter by user type
+      if (filters?.userType) {
+        const userTypes = await this.prisma.user_type.findMany();
+        console.log(`All user types: ${JSON.stringify(userTypes)}`);
+
+        // Fetch the userTypeId for the given type
+        const userType = await this.prisma.user_type.findFirst({
+          where: { type: filters.userType },
+        });
+
+        if (userType) {
+          whereClause.userTypeId = userType.id; // Filter by userTypeId
+        } else {
+          return [];
+        }
+      }
+
+      // Fetch users with filters
       const users = await this.prisma.user.findMany({
-        include: {
-          userType: true,
-        },
+        where: whereClause,
+        include: { userType: true },
       });
 
       return users.map(({ password, birth_date, userType, ...user }) => ({
         ...user,
         userType: userType ? userType.type : 'N/A',
-        birthDate: birth_date ? birth_date.toISOString().split('T')[0] : null, // Formatting birth date
+        birthDate: birth_date ? birth_date.toISOString().split('T')[0] : null,
       }));
     } catch (error) {
       console.error('Error fetching users:', error);
