@@ -3,10 +3,108 @@
 /* eslint-disable @typescript-eslint/no-unsafe-call */
 /* eslint-disable @typescript-eslint/no-unsafe-assignment */
 import { Test, TestingModule } from '@nestjs/testing';
+import { INestApplication } from '@nestjs/common';
+import * as request from 'supertest';
+import { UsersModule } from './users.module';
+import { PrismaService } from '../prisma/prisma.service';
+import * as dotenv from 'dotenv';
+
+describe('UsersController (Integration)', () => {
+  let app: INestApplication;
+  let prisma: PrismaService;
+  let userId: number;
+
+  beforeAll(async () => {
+    dotenv.config();
+    const moduleFixture: TestingModule = await Test.createTestingModule({
+      imports: [UsersModule],
+      providers: [PrismaService],
+    }).compile();
+
+    app = moduleFixture.createNestApplication();
+    await app.init();
+    prisma = moduleFixture.get<PrismaService>(PrismaService);
+    await prisma.$connect();
+  });
+
+  afterAll(async () => {
+    // Nettoyage des données créées pour éviter les conflits dans d'autres tests
+    if (userId) {
+      await prisma.user.delete({ where: { id: userId } }).catch(() => {});
+    }
+    await prisma.$disconnect();
+    await app.close();
+  });
+
+  it('Should create a user (POST /users)', async () => {
+    const response = await request(app.getHttpServer())
+      .post('/users')
+      .send({ 
+        email: `test${Date.now()}@example.com`, 
+        password: 'password123', 
+        family_name: 'Benkhelifa',
+        first_name: 'Bouchra',
+        phone_number: '0612345678',
+        birth_date: '2003-10-04', 
+        sex: 'F',
+        city: 'Mila',
+        street: 'Rue Didouche Mourad',
+        userTypeId: 1
+      })
+      .expect(201);
+
+    expect(response.body).toHaveProperty('id');
+    expect(response.body.email).toContain('@example.com');
+
+    userId = response.body.id; 
+  });
+
+  it('Should get all users (GET /users)', async () => {
+    const response = await request(app.getHttpServer())
+      .get('/users')
+      .expect(200);
+
+    expect(Array.isArray(response.body)).toBe(true);
+  });
+
+  it('Should get one user by ID (GET /users/:id)', async () => {
+    const response = await request(app.getHttpServer())
+      .get(`/users/${userId}`)
+      .expect(200);
+
+    expect(response.body).toHaveProperty('id', userId);
+  });
+
+  it('Should update a user (PATCH /users/:id)', async () => {
+    await request(app.getHttpServer())
+      .patch(`/users/${userId}`)
+      .send({ firstName: 'Samira' })  // Correction du nom de champ
+      .expect(200);
+  
+    const updatedUser = await request(app.getHttpServer())
+      .get(`/users/${userId}`)
+      .expect(200);
+    
+    expect(updatedUser.body.first_name).toBe('Samira');  
+  });
+
+  it('Should delete a user (DELETE /users/:id)', async () => {
+    await request(app.getHttpServer())
+      .delete(`/users/${userId}`)
+      .expect(200);
+
+    const foundUser = await prisma.user.findUnique({
+      where: { id: userId },
+    });
+    expect(foundUser).toBeNull();
+  });
+});
+
+/*
+import { Test, TestingModule } from '@nestjs/testing';
 import { UsersService } from './users.service';
 import { PrismaService } from '../prisma/prisma.service';
 import * as bcrypt from 'bcrypt';
-
 describe('UsersService', () => {
   let service: UsersService;
   const mockPrismaService = {
@@ -193,3 +291,4 @@ describe('UsersService', () => {
     );
   });
 });
+*/
