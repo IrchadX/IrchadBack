@@ -203,7 +203,7 @@ export class UsersService {
       const user = await this.prisma.user.findUnique({
         where: { id },
         include: {
-          userType: true, // This acts like a JOIN to get the user type name
+          userType: true,
         },
       });
 
@@ -216,8 +216,8 @@ export class UsersService {
 
       return {
         ...result,
-        userTypeName: userType?.type ?? null, // Get the actual name from the user_type table
-        birthDate: birth_date ? birth_date.toISOString().split('T')[0] : null, // Convert birth_date to YYYY-MM-DD
+        userTypeName: userType?.type ?? null,
+        birthDate: birth_date ? birth_date.toISOString().split('T')[0] : null,
       };
     } catch (error) {
       console.error(`Error fetching user with ID ${id}:`, error);
