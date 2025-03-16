@@ -1,3 +1,4 @@
+/* eslint-disable prettier/prettier */
 /* eslint-disable @typescript-eslint/no-unsafe-return */
 // src/users/users.controller.ts
 import {
@@ -23,8 +24,7 @@ export class UsersController {
   create(@Body() createUserDto: CreateUserDto) {
     return this.usersService.create(createUserDto);
   }
-
-  // Updated controller endpoint
+  // Update users controller endpoint
   @Get()
   async getUsers(
     @Query('search') search?: string,

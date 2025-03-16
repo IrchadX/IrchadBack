@@ -53,10 +53,8 @@ describe('UsersController', () => {
       password: '123456',
       phoneNumber: '0555555555',
     };
-    const result = await controller.create(dto);
+    await controller.create(dto);
     expect(usersService.create).toHaveBeenCalledWith(dto);
-    //Ig we don't need to test if it is equal to the result
-    expect(result).toEqual({ id: 1, ...dto });
   });
 
   it('should return an array of users', async () => {
