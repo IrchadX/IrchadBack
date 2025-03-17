@@ -4,7 +4,6 @@ import { IsDateString, IsOptional, IsString, MinLength } from 'class-validator';
 
 export class CreateUserDto {
   @IsOptional()
-  @IsString()
   firstName?: string;
 
   @IsOptional()

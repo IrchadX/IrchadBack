@@ -24,7 +24,7 @@ export class UsersController {
   create(@Body() createUserDto: CreateUserDto) {
     return this.usersService.create(createUserDto);
   }
-  // Update users controller endpoint
+
   @Get()
   async getUsers(
     @Query('search') search?: string,
@@ -63,5 +63,14 @@ export class UsersController {
   @Delete(':id')
   async remove(@Param('id', ParseIntPipe) id: number) {
     return this.usersService.remove(id);
+  }
+
+  @Patch(':id/update-password')
+  async updatePassword(
+    @Param('id', ParseIntPipe) id: number,
+    @Body('currentPassword') currentPassword: string,
+    @Body('newPassword') newPassword: string,
+  ) {
+    return this.usersService.updatePassword(id, currentPassword, newPassword);
   }
 }

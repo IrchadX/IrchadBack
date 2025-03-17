@@ -16,6 +16,45 @@ import * as bcrypt from 'bcrypt';
 export class UsersService {
   constructor(private prisma: PrismaService) {}
 
+  async updatePassword(
+    id: number,
+    currentPassword: string,
+    newPassword: string,
+  ) {
+    try {
+      const user = await this.prisma.user.findUnique({ where: { id } });
+
+      if (!user) {
+        throw new NotFoundException(`User with ID ${id} not found`);
+      }
+
+      // Verify the current password
+      const isPasswordValid = await bcrypt.compare(
+        currentPassword,
+        user.password,
+      );
+      if (!isPasswordValid) {
+        throw new InternalServerErrorException('Current password is incorrect');
+      }
+
+      // Hash the new password
+      const hashedPassword = await bcrypt.hash(newPassword, 10);
+
+      // Update the user's password
+      await this.prisma.user.update({
+        where: { id },
+        data: { password: hashedPassword },
+      });
+
+      return { message: 'Password updated successfully' };
+    } catch (error) {
+      console.error('Error updating password:', error);
+      throw new InternalServerErrorException(
+        'Failed to update password: ' + error.message,
+      );
+    }
+  }
+
   async create(createUserDto: CreateUserDto) {
     try {
       const hashedPassword = await bcrypt.hash(createUserDto.password, 10);
@@ -27,7 +66,9 @@ export class UsersService {
           phone_number: createUserDto.phoneNumber,
           password: hashedPassword,
           userTypeId: createUserDto.userTypeId ?? null,
-          birth_date: createUserDto.birthDate ?? null,
+          birth_date: createUserDto.birthDate
+            ? new Date(createUserDto.birthDate)
+            : null,
           sex: createUserDto.sex ?? null,
           city: createUserDto.city ?? null,
           street: createUserDto.street ?? null,
@@ -99,7 +140,19 @@ export class UsersService {
 
       // Filter by user type
       if (filters?.userType) {
-        whereClause.userType = { type: filters.userType };
+        const userTypes = await this.prisma.user_type.findMany();
+        console.log(`All user types: ${JSON.stringify(userTypes)}`);
+
+        // Fetch the userTypeId for the given type
+        const userType = await this.prisma.user_type.findFirst({
+          where: { type: filters.userType },
+        });
+
+        if (userType) {
+          whereClause.userTypeId = userType.id; // Filter by userTypeId
+        } else {
+          return [];
+        }
       }
 
       // Fetch users with filters
@@ -182,7 +235,7 @@ export class UsersService {
       const user = await this.prisma.user.findUnique({
         where: { id },
         include: {
-          userType: true,
+          userType: true, // This acts like a JOIN to get the user type name
         },
       });
 
@@ -190,12 +243,13 @@ export class UsersService {
         throw new NotFoundException(`User with ID ${id} not found`);
       }
 
+      // Destructure and format response
       const { password, birth_date, userType, ...result } = user;
 
       return {
         ...result,
-        userType: userType ? userType.type : 'N/A',
-        birthDate: birth_date ? birth_date.toISOString().split('T')[0] : null,
+        userTypeName: userType?.type ?? null, // Get the actual name from the user_type table
+        birthDate: birth_date ? birth_date.toISOString().split('T')[0] : null, // Convert birth_date to YYYY-MM-DD
       };
     } catch (error) {
       console.error(`Error fetching user with ID ${id}:`, error);
