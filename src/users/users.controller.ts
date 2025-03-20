@@ -49,6 +49,23 @@ export class UsersController {
     return this.usersService.findAll(search, filters);
   }
 
+  @Get('by-type')
+  async getUsersByType(
+    @Query('type') type: string, // Accept multiple types as a comma-separated string
+    @Query('search') search?: string,
+  ) {
+    if (!type) {
+      throw new Error('Le paramètre "type" est requis.');
+    }
+  
+    const types = type.split(','); // Split the types into an array
+    const filters = {
+      userType: types, 
+    };
+  
+    return this.usersService.findAll(search, filters);
+  }
+
   @Get(':id')
   findOne(@Param('id', ParseIntPipe) id: number) {
     return this.usersService.findOne(id);
