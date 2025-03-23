@@ -7,7 +7,6 @@ CREATE TABLE "user" (
     "phone_number" VARCHAR,
     "password" VARCHAR,
     "userTypeId" INTEGER,
-
     CONSTRAINT "user_pkey" PRIMARY KEY ("id")
 );
 
