@@ -16,9 +16,15 @@ model user {
   phone_number String?   @db.VarChar
   email        String?   @unique @db.VarChar  
   password     String?   @db.VarChar
+  birth_date   DateTime?  
+  sex          String?   @db.VarChar 
+  city         String?   @db.VarChar  
+  street       String?   @db.VarChar 
   userTypeId   Int?
   userType     user_type? @relation(fields: [userTypeId], references: [id], onDelete: SetNull)
 }
+
+
 
 model user_type {
   id         Int      @id @default(autoincrement())
@@ -26,3 +32,68 @@ model user_type {
   type       String?  @db.VarChar
   user       user[]
 }
+
+model environment {
+  id           Int             @id @default(autoincrement())
+  name         String
+  is_public    Boolean
+  user_id      String
+  address      String
+  zones        zone[]
+  pois         poi[]
+  env_delimiters env_delimiter[]
+}
+
+model env_delimiter {
+  id          Int      @id @default(autoincrement())
+  env_id      Int
+  coordinates Json
+  created_at  DateTime @default(now()) @db.Timestamptz(6)
+  environment environment @relation(fields: [env_id], references: [id])
+}
+
+model zone {
+  id            Int      @id @default(autoincrement())
+  created_at    DateTime @default(now()) @db.Timestamptz(6)
+  environmentId Int
+  environment   environment @relation(fields: [environmentId], references: [id])
+  name          String
+  description   String
+  type          String
+  coordinates   Json
+  pois          poi_zone[]
+}
+
+model poi {
+  id          Int      @id @default(autoincrement())
+  created_at  DateTime @default(now()) @db.Timestamptz(6)
+  name        String
+  description String
+  type        String
+  coordinates Json
+  category_id Int?
+  env_id      Int
+  image_url   String?
+  environment environment @relation(fields: [env_id], references: [id])
+  zones       poi_zone[]
+  category    category?   @relation(fields: [category_id], references: [id]) 
+}
+
+model category {
+  id         Int      @id @default(autoincrement())
+  created_at DateTime @default(now()) @db.Timestamptz(6)
+  category   String
+  pois       poi[]
+}
+
+model poi_zone {
+  id      Int  @id @default(autoincrement())
+  created_at DateTime @default(now()) @db.Timestamptz(6)
+  poiId   Int
+  zoneId  Int
+  poi     poi  @relation(fields: [poiId], references: [id])
+  zone    zone @relation(fields: [zoneId], references: [id])
+
+  @@unique([poiId, zoneId])
+}
+
