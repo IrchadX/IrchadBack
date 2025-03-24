@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { CreateEnvironmentDto } from './dto/create-environment.dto';
 import { UpdateEnvironmentDto } from './dto/update-environment.dto';
@@ -239,5 +239,51 @@ export class EnvironmentsService {
     console.log('📌 Final Deleted IDs:', deletedIds);
 
     return { added, updated, deletedIds };
+  }
+
+  async getAll() {
+    return this.prisma.environment.findMany();
+  }
+
+  async getOne(id: string) {
+    const envId = Number(id);
+
+    const environment = await this.prisma.environment.findUnique({
+      where: { id: envId },
+      include: {
+        zone: true,
+        pois: true,
+      },
+    });
+
+    if (!environment) {
+      throw new NotFoundException(`Environment with ID ${envId} not found.`);
+    }
+
+    return environment;
+  }
+
+  async delete(id: string) {
+    const envId = Number(id);
+
+    const environment = await this.prisma.environment.findUnique({
+      where: { id: envId },
+    });
+
+    if (!environment) {
+      throw new NotFoundException(`Environment with ID ${envId} not found.`);
+    }
+
+    console.log(`🗑️ Deleting Environment ID: ${envId}`);
+
+    await this.prisma.zone.deleteMany({ where: { env_id: envId } });
+    await this.prisma.poi.deleteMany({ where: { env_id: envId } });
+    await this.prisma.environment.delete({ where: { id: envId } });
+
+    console.log('✅ Environment, Zones, and POIs deleted successfully.');
+
+    return {
+      message: `Environment ${envId} and its related data have been deleted.`,
+    };
   }
 }
