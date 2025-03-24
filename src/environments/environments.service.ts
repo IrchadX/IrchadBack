@@ -1,7 +1,29 @@
-import { PrismaService } from 'src/prisma/prisma.service';
 import { Injectable } from '@nestjs/common';
+import { PrismaService } from 'src/prisma/prisma.service';
 import { CreateEnvironmentDto } from './dto/create-environment.dto';
 import { UpdateEnvironmentDto } from './dto/update-environment.dto';
+
+interface Zone {
+  id?: number;
+  name?: string | null;
+  description?: string | null;
+  coordinates: any;
+  env_id: number | null; // Allow null
+  created_at?: Date;
+  updated_at?: Date | null;
+  type_id?: number | null;
+}
+
+interface POI {
+  id?: number;
+  name?: string | null;
+  description?: string | null;
+  coordinates: any;
+  image_url?: string | null;
+  env_id: number | null; // Allow null
+  created_at?: Date;
+  category_id?: number | null;
+}
 
 @Injectable()
 export class EnvironmentsService {
@@ -10,182 +32,212 @@ export class EnvironmentsService {
   async create(createEnvironmentDto: CreateEnvironmentDto) {
     const { features, properties } = createEnvironmentDto;
 
+    // Log the incoming DTO for debugging
+    console.log(
+      'Incoming CreateEnvironmentDto:',
+      JSON.stringify(createEnvironmentDto, null, 2),
+    );
+
     // Create the environment
     const environment = await this.prisma.environment.create({
       data: {
         name: properties.environment.name,
         is_public: properties.environment.isPublic,
-        user_id: properties.environment.userId,
+        user_id: Number(properties.environment.userId), // Ensure this is a number
         address: properties.environment.address,
-        zones: {
-          create: features
-            .filter(
-              (feature) =>
-                feature.properties.type === 'zone' ||
-                feature.properties.type.startsWith('Zone'),
-            )
-            .map((feature) => ({
-              name: feature.properties.nom,
-              description: feature.properties.description,
-              type: feature.properties.type,
-              coordinates: feature.geometry.coordinates,
-            })),
-        },
-        pois: {
-          create: features
-            .filter((feature) => feature.properties.type === 'poi')
-            .map((feature) => ({
-              name: feature.properties.nom,
-              description: feature.properties.description,
-              type: feature.properties.categorie,
-              coordinates: feature.geometry.coordinates,
-              image_url: feature.properties.image,
-              category_id: feature.properties.categoryId, // Assuming categoryId is provided
-            })),
-        },
       },
-      include: { zones: true, pois: true },
     });
 
-    // Link POIs to zones through poi_zone
-    for (const feature of features) {
-      if (feature.properties.type === 'poi' && feature.properties.zoneId) {
-        await this.prisma.poi_zone.create({
-          data: {
-            poiId: environment.pois.find(
-              (poi) => poi.name === feature.properties.nom,
-            )?.id,
-            zoneId: feature.properties.zoneId,
-          },
-        });
-      }
-    }
+    // Log the created environment
+    console.log('Created Environment:', environment);
+
+    const envId = environment.id;
+
+    // Extract zones and POIs from GeoJSON features
+    const zones = features
+      .filter(
+        (f) =>
+          f.properties.type.startsWith('Zone') || f.properties.type === 'zone',
+      )
+      .map((f) => ({
+        name: f.properties.name,
+        description: f.properties.description,
+        coordinates: f.geometry.coordinates,
+        env_id: envId,
+      }));
+
+    const pois = features
+      .filter((f) => f.properties.type === 'poi')
+      .map((f) => ({
+        name: f.properties.name,
+        description: f.properties.description,
+        coordinates: f.geometry.coordinates,
+        image_url: f.properties.image,
+        env_id: envId,
+      }));
+
+    // Log the extracted zones and POIs
+    console.log('*** Extracted Zones:', zones);
+    console.log('*** Extracted POIs:', pois);
+
+    // Bulk insert zones and POIs
+    await this.prisma.zone.createMany({ data: zones });
+    await this.prisma.poi.createMany({ data: pois });
+
+    // Log the result of the bulk insert
+    console.log('Zones and POIs inserted successfully');
+
+    return { environment, zones, pois };
+  }
+  async update(id: string, updateEnvironmentDto: UpdateEnvironmentDto) {
+    const envId = Number(id); // Convert id to number
+    const { features, properties } = updateEnvironmentDto;
+
+    console.log('🔹 Starting update for environment ID:', envId);
+
+    // Update the environment details
+    const environment = await this.prisma.environment.update({
+      where: { id: envId },
+      data: {
+        name: properties.environment.name,
+        is_public: properties.environment.isPublic,
+        user_id: properties.environment.userId
+          ? Number(properties.environment.userId)
+          : undefined,
+        address: properties.environment.address,
+      },
+    });
+
+    console.log('✅ Environment updated:', environment);
+
+    // Fetch existing zones and POIs
+    const existingZones = await this.prisma.zone.findMany({
+      where: { env_id: envId },
+    });
+    const existingPOIs = await this.prisma.poi.findMany({
+      where: { env_id: envId },
+    });
+
+    console.log('📌 Existing Zones:', existingZones);
+    console.log('📌 Existing POIs:', existingPOIs);
+
+    // Transform GeoJSON features into Zone and POI objects
+    const newZones: Zone[] = features
+      .filter(
+        (f) =>
+          f.properties.type.startsWith('Zone') || f.properties.type == 'zone',
+      )
+      .map((f) => ({
+        id: Number(f.properties.id),
+        name: f.properties.name || null,
+        description: f.properties.description || null,
+        coordinates: f.geometry.coordinates,
+        env_id: envId, // Fix: Use envId (number) instead of id (string)
+      }));
+
+    const newPOIs: POI[] = features
+      .filter((f) => f.properties.type === 'poi')
+      .map((f) => ({
+        id: Number(f.properties.id),
+        name: f.properties.name || null,
+        description: f.properties.description || null,
+        coordinates: f.geometry.coordinates,
+        image_url: f.properties.image || null,
+        env_id: envId, // Fix: Use envId (number) instead of id (string)
+      }));
+
+    console.log('📌 New Zones:', newZones);
+    console.log('📌 New POIs:', newPOIs);
+
+    // Detect changes
+    console.log('🔍 Detecting changes for Zones...');
+    const {
+      added: addedZones,
+      updated: updatedZones,
+      deletedIds: deletedZoneIds,
+    } = this.detectChanges(newZones, existingZones);
+    console.log('➕ Added Zones:', addedZones);
+    console.log('📝 Updated Zones:', updatedZones);
+    console.log('❌ Deleted Zone IDs:', deletedZoneIds);
+
+    console.log('🔍 Detecting changes for POIs...');
+    const {
+      added: addedPOIs,
+      updated: updatedPOIs,
+      deletedIds: deletedPOIIds,
+    } = this.detectChanges(newPOIs, existingPOIs);
+    console.log('➕ Added POIs:', addedPOIs);
+    console.log('📝 Updated POIs:', updatedPOIs);
+    console.log('❌ Deleted POI IDs:', deletedPOIIds);
+
+    // Apply changes: Zones
+    await Promise.all([
+      ...addedZones.map(
+        (zone) => this.prisma.zone.create({ data: { ...zone, env_id: envId } }), // Fix: Use envId
+      ),
+      ...updatedZones.map((zone) =>
+        this.prisma.zone.update({
+          where: { id: zone.id as number },
+          data: zone,
+        }),
+      ),
+      this.prisma.zone.deleteMany({ where: { id: { in: deletedZoneIds } } }),
+    ]);
+
+    console.log('✅ Zones updated successfully.');
+
+    // Apply changes: POIs
+    await Promise.all([
+      ...addedPOIs.map(
+        (poi) => this.prisma.poi.create({ data: { ...poi, env_id: envId } }), // Fix: Use envId
+      ),
+      ...updatedPOIs.map((poi) =>
+        this.prisma.poi.update({ where: { id: poi.id as number }, data: poi }),
+      ),
+      this.prisma.poi.deleteMany({ where: { id: { in: deletedPOIIds } } }),
+    ]);
+
+    console.log('✅ POIs updated successfully.');
 
     return environment;
   }
 
-  async update(id: number, updateEnvironmentDto: UpdateEnvironmentDto) {
-    const { features, properties } = updateEnvironmentDto;
+  /**
+   * Detects added, updated, and deleted elements between the new and existing data.
+   */
+  private detectChanges(
+    newFeatures: (Zone | POI)[],
+    existingFeatures: (Zone | POI)[],
+  ) {
+    console.log('🔄 Running detectChanges...');
 
-    // Update the environment
-    const environment = await this.prisma.environment.update({
-      where: { id },
-      data: {
-        name: properties.environment.name,
-        is_public: properties.environment.isPublic,
-        user_id: properties.environment.userId,
-        address: properties.environment.address,
-      },
-      include: { zones: true, pois: true },
-    });
+    const added: (Zone | POI)[] = [];
+    const updated: (Zone | POI)[] = [];
+    const deletedIds: number[] = existingFeatures.map((f) => f.id!);
 
-    // Get existing zones and POIs
-    const existingZones = environment.zones;
-    const existingPOIs = environment.pois;
+    console.log('📌 Initial Deleted IDs:', deletedIds);
 
-    // Detect changes
-    for (const feature of features) {
-      const { properties: featureProps, geometry, id: featureId } = feature;
+    for (const newFeature of newFeatures) {
+      const existing = existingFeatures.find((f) => f.id === newFeature.id);
 
-      if (featureProps.type === 'zone') {
-        // Check if the zone already exists
-        const existingZone = existingZones.find(
-          (zone) => zone.id === featureId,
+      if (!existing) {
+        console.log('➕ Adding new feature:', newFeature);
+        added.push(newFeature);
+      } else if (JSON.stringify(existing) !== JSON.stringify(newFeature)) {
+        console.log('📝 Updating feature:', newFeature);
+        updated.push(newFeature);
+      }
+
+      if (newFeature.id) {
+        console.log(
+          `✔️ Keeping ID ${newFeature.id}, removing from deleted list`,
         );
-
-        if (existingZone) {
-          // Update the zone
-          await this.prisma.zone.update({
-            where: { id: featureId },
-            data: {
-              name: featureProps.nom,
-              description: featureProps.description,
-              type: featureProps.type,
-              coordinates: geometry.coordinates,
-            },
-          });
-        } else {
-          // Create a new zone
-          await this.prisma.zone.create({
-            data: {
-              name: featureProps.nom,
-              description: featureProps.description,
-              type: featureProps.type,
-              coordinates: geometry.coordinates,
-              environmentId: environment.id,
-            },
-          });
-        }
-      } else if (featureProps.type === 'poi') {
-        // Check if the POI already exists
-        const existingPOI = existingPOIs.find((poi) => poi.id === featureId);
-
-        if (existingPOI) {
-          // Update the POI
-          await this.prisma.poi.update({
-            where: { id: featureId },
-            data: {
-              name: featureProps.nom,
-              description: featureProps.description,
-              type: featureProps.categorie,
-              coordinates: geometry.coordinates,
-              image_url: featureProps.image,
-              category_id: featureProps.categoryId,
-            },
-          });
-        } else {
-          // Create a new POI
-          await this.prisma.poi.create({
-            data: {
-              name: featureProps.nom,
-              description: featureProps.description,
-              type: featureProps.categorie,
-              coordinates: geometry.coordinates,
-              image_url: featureProps.image,
-              category_id: featureProps.categoryId,
-              env_id: environment.id,
-            },
-          });
-        }
-
-        // Link POI to zone (if applicable)
-        if (featureProps.zoneId) {
-          await this.prisma.poi_zone.create({
-            data: {
-              poiId: featureId,
-              zoneId: featureProps.zoneId,
-            },
-          });
-        }
+        deletedIds.splice(deletedIds.indexOf(newFeature.id), 1);
       }
     }
 
-    // Detect deleted zones and POIs
-    const existingZoneIds = existingZones.map((zone) => zone.id);
-    const newZoneIds = features
-      .filter((feature) => feature.properties.type === 'zone')
-      .map((feature) => feature.id);
-    const deletedZoneIds = existingZoneIds.filter(
-      (id) => !newZoneIds.includes(id),
-    );
+    console.log('📌 Final Deleted IDs:', deletedIds);
 
-    const existingPOIIds = existingPOIs.map((poi) => poi.id);
-    const newPOIIds = features
-      .filter((feature) => feature.properties.type === 'poi')
-      .map((feature) => feature.id);
-    const deletedPOIIds = existingPOIIds.filter(
-      (id) => !newPOIIds.includes(id),
-    );
-
-    // Delete zones and POIs that no longer exist
-    await this.prisma.zone.deleteMany({
-      where: { id: { in: deletedZoneIds } },
-    });
-
-    await this.prisma.poi.deleteMany({
-      where: { id: { in: deletedPOIIds } },
-    });
-
-    return environment;
+    return { added, updated, deletedIds };
   }
 }

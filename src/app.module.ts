@@ -7,18 +7,20 @@ import { UsersModule } from './users/users.module';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { DevicesModule } from './devices/devices.module';
+import { EnvironmentsController } from './environments/environments.controller';
+import { EnvironmentsService } from './environments/environments.service';
 
 @Module({
   imports: [
     ConfigModule.forRoot({
-      isGlobal: true, // This makes ConfigModule available globally
+      isGlobal: true,
     }),
     PrismaModule,
     UsersModule,
     AuthModule,
     DevicesModule,
   ],
-  controllers: [AppController],
-  providers: [AppService],
+  controllers: [AppController, EnvironmentsController],
+  providers: [AppService, EnvironmentsService],
 })
 export class AppModule {}
