@@ -1,26 +1,47 @@
 import { Injectable } from '@nestjs/common';
+import { PrismaService } from 'src/prisma/prisma.service';
 import { CreateZoneDto } from './dto/create-zone.dto';
 import { UpdateZoneDto } from './dto/update-zone.dto';
 
 @Injectable()
 export class ZonesService {
-  create(createZoneDto: CreateZoneDto) {
-    return 'This action adds a new zone';
+  constructor(private readonly prisma: PrismaService) {}
+
+  async create(createZoneDto: CreateZoneDto) {
+    return this.prisma.zone.create({
+      data: {
+        name: createZoneDto.name,
+        description: createZoneDto.description,
+        coordinates: createZoneDto.coordinates, // Prisma handles JSON automatically
+      },
+    });
   }
 
-  findAll() {
-    return `This action returns all zones`;
+  async findAll() {
+    return this.prisma.zone.findMany();
   }
 
-  findOne(id: number) {
-    return `This action returns a #${id} zone`;
+  async findOne(id: number) {
+    return this.prisma.zone.findUnique({
+      where: { id },
+    });
   }
 
-  update(id: number, updateZoneDto: UpdateZoneDto) {
-    return `This action updates a #${id} zone`;
+  async update(id: number, updateZoneDto: UpdateZoneDto) {
+    return this.prisma.zone.update({
+      where: { id },
+      data: {
+        name: updateZoneDto.name,
+        description: updateZoneDto.description,
+        coordinates: updateZoneDto.coordinates,
+      },
+    });
   }
 
-  remove(id: number) {
-    return `This action removes a #${id} zone`;
+  async remove(id: number) {
+    await this.prisma.zone.delete({
+      where: { id },
+    });
+    return { message: `Zone ${id} deleted` };
   }
 }

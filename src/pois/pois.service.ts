@@ -1,26 +1,37 @@
 import { Injectable } from '@nestjs/common';
-import { CreatePoisDto } from './dto/create-pois.dto';
-import { UpdatePoisDto } from './dto/update-pois.dto';
+import { PrismaService } from 'src/prisma/prisma.service';
+import { CreatePoiDto } from './dto/create-poi.dto';
+import { UpdatePoiDto } from './dto/update-poi.dto';
 
 @Injectable()
 export class PoisService {
-  create(createPoisDto: CreatePoisDto) {
-    return 'This action adds a new pois';
+  constructor(private readonly prisma: PrismaService) {}
+
+  async create(createPoiDto: CreatePoiDto) {
+    return this.prisma.poi.create({
+      data: createPoiDto,
+    });
   }
 
-  findAll() {
-    return `This action returns all pois`;
+  async findAll() {
+    return this.prisma.poi.findMany();
   }
 
-  findOne(id: number) {
-    return `This action returns a #${id} pois`;
+  async findOne(id: number) {
+    return this.prisma.poi.findUnique({
+      where: { id },
+    });
   }
 
-  update(id: number, updatePoisDto: UpdatePoisDto) {
-    return `This action updates a #${id} pois`;
+  async update(id: number, updatePoiDto: UpdatePoiDto) {
+    return this.prisma.poi.update({
+      where: { id },
+      data: updatePoiDto,
+    });
   }
 
-  remove(id: number) {
-    return `This action removes a #${id} pois`;
+  async remove(id: number) {
+    await this.prisma.poi.delete({ where: { id } });
+    return { message: `POI ${id} deleted` };
   }
 }

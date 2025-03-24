@@ -1,15 +1,23 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Body,
+  Param,
+  Patch,
+  Delete,
+} from '@nestjs/common';
 import { PoisService } from './pois.service';
-import { CreatePoisDto } from './dto/create-pois.dto';
-import { UpdatePoisDto } from './dto/update-pois.dto';
+import { CreatePoiDto } from './dto/create-poi.dto';
+import { UpdatePoiDto } from './dto/update-poi.dto';
 
 @Controller('pois')
 export class PoisController {
   constructor(private readonly poisService: PoisService) {}
 
   @Post()
-  create(@Body() createPoisDto: CreatePoisDto) {
-    return this.poisService.create(createPoisDto);
+  create(@Body() createPoiDto: CreatePoiDto) {
+    return this.poisService.create(createPoiDto);
   }
 
   @Get()
@@ -19,16 +27,16 @@ export class PoisController {
 
   @Get(':id')
   findOne(@Param('id') id: string) {
-    return this.poisService.findOne(+id);
+    return this.poisService.findOne(Number(id));
   }
 
   @Patch(':id')
-  update(@Param('id') id: string, @Body() updatePoisDto: UpdatePoisDto) {
-    return this.poisService.update(+id, updatePoisDto);
+  update(@Param('id') id: string, @Body() updatePoiDto: UpdatePoiDto) {
+    return this.poisService.update(Number(id), updatePoiDto);
   }
 
   @Delete(':id')
   remove(@Param('id') id: string) {
-    return this.poisService.remove(+id);
+    return this.poisService.remove(Number(id));
   }
 }

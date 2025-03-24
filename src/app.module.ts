@@ -7,8 +7,10 @@ import { UsersModule } from './users/users.module';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { DevicesModule } from './devices/devices.module';
-import { EnvironmentsController } from './environments/environments.controller';
-import { EnvironmentsService } from './environments/environments.service';
+import { EnvironmentsModule } from './environments/environments.module';
+import { ZonesModule } from './zones/zones.module';
+import { PoisModule } from './pois/pois.module';
+import { PrismaService } from './prisma/prisma.service';
 
 @Module({
   imports: [
@@ -19,8 +21,11 @@ import { EnvironmentsService } from './environments/environments.service';
     UsersModule,
     AuthModule,
     DevicesModule,
+    EnvironmentsModule,
+    ZonesModule,
+    PoisModule,
   ],
-  controllers: [AppController, EnvironmentsController],
-  providers: [AppService, EnvironmentsService],
+  controllers: [AppController],
+  providers: [AppService, PrismaService],
 })
 export class AppModule {}
