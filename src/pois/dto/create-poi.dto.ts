@@ -1,23 +1,37 @@
-import { IsNotEmpty, IsNumber, IsOptional, IsString } from 'class-validator';
+import {
+  IsNotEmpty,
+  IsNumber,
+  IsOptional,
+  IsString,
+  IsArray,
+} from 'class-validator';
 
 export class CreatePoiDto {
-  @IsNotEmpty()
-  @IsString()
-  name: string;
+  @IsOptional()
+  @IsNumber()
+  id?: number;
 
   @IsOptional()
   @IsString()
-  description?: string;
+  name?: string | null;
 
-  @IsNotEmpty()
-  @IsNumber()
-  latitude: number;
+  @IsOptional()
+  @IsString()
+  description?: string | null;
 
+  @IsArray()
   @IsNotEmpty()
-  @IsNumber()
-  longitude: number;
+  coordinates: any;
 
-  @IsNotEmpty()
+  @IsOptional()
+  @IsString()
+  image_url?: string | null;
+
+  @IsOptional()
   @IsNumber()
-  zoneId: number;
+  env_id?: number | null;
+
+  @IsOptional()
+  @IsNumber()
+  category_id?: number | null;
 }
