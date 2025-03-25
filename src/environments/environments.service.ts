@@ -320,17 +320,28 @@ export class EnvironmentsService {
 
   private async isPOIInsideZone(poi: any, zone: any): Promise<boolean> {
     console.log(`Checking POI: ${poi.name} against Zone: ${zone.name}`);
-
     try {
       const zonePolygon = turf.polygon([zone.coordinates[0]]); // Ensure valid zone polygon
       let isInside = false;
 
       if (poi.coordinates.length === 1 && poi.coordinates[0].length === 1) {
-        // POI is a single point
+        // 🟢 POI is a single point
         const poiPoint = turf.point(poi.coordinates[0][0]);
         isInside = turf.booleanPointInPolygon(poiPoint, zonePolygon);
+      } else if (
+        poi.coordinates.length === 1 &&
+        poi.coordinates[0].length === 2
+      ) {
+        // 🔵 POI is a line (2 coordinates)
+        const line = turf.lineString(poi.coordinates[0]);
+        const linePoints = poi.coordinates[0].map((coord) => turf.point(coord));
+
+        // Check if any point of the line is inside the zone
+        isInside = linePoints.some((point) =>
+          turf.booleanPointInPolygon(point, zonePolygon),
+        );
       } else {
-        // POI is a polygon, ensure it's closed
+        // 🔴 POI is a polygon, ensure it's closed
         const fixedPOI = this.fixPolygon(poi.coordinates);
         const poiPolygon = turf.polygon([fixedPOI[0]]);
         isInside = turf.booleanContains(zonePolygon, poiPolygon);
