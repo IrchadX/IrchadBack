@@ -2,6 +2,7 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { CreateEnvironmentDto } from './dto/create-environment.dto';
 import { UpdateEnvironmentDto } from './dto/update-environment.dto';
+import * as turf from '@turf/turf';
 
 interface Zone {
   id?: number;
@@ -32,7 +33,6 @@ export class EnvironmentsService {
   async create(createEnvironmentDto: CreateEnvironmentDto) {
     const { features, properties } = createEnvironmentDto;
 
-    // Log the incoming DTO for debugging
     console.log(
       'Incoming CreateEnvironmentDto:',
       JSON.stringify(createEnvironmentDto, null, 2),
@@ -41,19 +41,32 @@ export class EnvironmentsService {
     // Create the environment
     const environment = await this.prisma.environment.create({
       data: {
+        format_id: 1,
         name: properties.environment.name,
         is_public: properties.environment.isPublic,
-        user_id: Number(properties.environment.userId), // Ensure this is a number
+        user_id: Number(properties.environment.userId),
         address: properties.environment.address,
       },
     });
 
-    // Log the created environment
     console.log('Created Environment:', environment);
-
     const envId = environment.id;
 
-    // Extract zones and POIs from GeoJSON features
+    // Associate environment with the user if it's not public
+    if (!environment.is_public) {
+      console.log(
+        `🔗 Associating environment ${envId} with user ${environment.user_id}`,
+      );
+      await this.prisma.env_user.create({
+        data: {
+          user_id: Number(properties.environment.userId),
+          env_id: envId,
+        },
+      });
+      console.log('✅ Environment associated with user.');
+    }
+
+    // Extract zones and POIs
     const zones = features
       .filter(
         (f) =>
@@ -76,7 +89,6 @@ export class EnvironmentsService {
         env_id: envId,
       }));
 
-    // Log the extracted zones and POIs
     console.log('*** Extracted Zones:', zones);
     console.log('*** Extracted POIs:', pois);
 
@@ -84,11 +96,16 @@ export class EnvironmentsService {
     await this.prisma.zone.createMany({ data: zones });
     await this.prisma.poi.createMany({ data: pois });
 
-    // Log the result of the bulk insert
-    console.log('Zones and POIs inserted successfully');
+    // 🔍 Fetch inserted zones & POIs with IDs
+    const insertedZones = await this.prisma.zone.findMany();
+    const insertedPOIs = await this.prisma.poi.findMany();
+
+    console.log('✅ Zones and POIs inserted successfully.');
+    this.detectPOIsInsideZones(insertedZones, insertedPOIs);
 
     return { environment, zones, pois };
   }
+
   async update(id: string, updateEnvironmentDto: UpdateEnvironmentDto) {
     const envId = Number(id); // Convert id to number
     const { features, properties } = updateEnvironmentDto;
@@ -286,4 +303,75 @@ export class EnvironmentsService {
       message: `Environment ${envId} and its related data have been deleted.`,
     };
   }
+
+  private async detectPOIsInsideZones(zones: Zone[], pois: POI[]) {
+    console.log('🔍 Checking which POIs are inside zones...');
+
+    for (const poi of pois) {
+      for (const zone of zones) {
+        const isInside = this.isPOIInsideZone(poi, zone);
+        if (await isInside) {
+          console.log(`✅ POI "${poi.name}" is inside Zone "${zone.name}"`);
+          // Store in DB or log it
+        }
+      }
+    }
+  }
+
+  private async isPOIInsideZone(poi: any, zone: any): Promise<boolean> {
+    console.log(`Checking POI: ${poi.name} against Zone: ${zone.name}`);
+
+    try {
+      const zonePolygon = turf.polygon([zone.coordinates[0]]); // Ensure valid zone polygon
+      let isInside = false;
+
+      if (poi.coordinates.length === 1 && poi.coordinates[0].length === 1) {
+        // POI is a single point
+        const poiPoint = turf.point(poi.coordinates[0][0]);
+        isInside = turf.booleanPointInPolygon(poiPoint, zonePolygon);
+      } else {
+        // POI is a polygon, ensure it's closed
+        const fixedPOI = this.fixPolygon(poi.coordinates);
+        const poiPolygon = turf.polygon([fixedPOI[0]]);
+        isInside = turf.booleanContains(zonePolygon, poiPolygon);
+      }
+
+      if (isInside) {
+        console.log(`✅ POI "${poi.name}" is inside Zone "${zone.name}"`);
+
+        // Insert into poi_zone table if not already there
+        const existingEntry = await this.prisma.poi_zone.findFirst({
+          where: { poi_id: poi.id, zone_id: zone.id },
+        });
+
+        if (!existingEntry) {
+          await this.prisma.poi_zone.create({
+            data: { poi_id: poi.id, zone_id: zone.id },
+          });
+          console.log(
+            `✅ Inserted POI-Zone relation: ${poi.name} -> ${zone.name}`,
+          );
+        } else {
+          console.log(
+            `⚠️ POI-Zone relation already exists: ${poi.name} -> ${zone.name}`,
+          );
+        }
+      }
+
+      return isInside;
+    } catch (error) {
+      console.error(`❌ Error processing POI "${poi.name}": ${error.message}`);
+      return false;
+    }
+  }
+
+  private fixPolygon = (coordinates: number[][][]) => {
+    const firstPoint = coordinates[0][0];
+    const lastPoint = coordinates[0][coordinates[0].length - 1];
+
+    if (firstPoint[0] !== lastPoint[0] || firstPoint[1] !== lastPoint[1]) {
+      coordinates[0].push(firstPoint); // Close the polygon
+    }
+    return coordinates;
+  };
 }
