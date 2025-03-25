@@ -21,7 +21,7 @@ export class CreateZoneDto {
 
   @IsArray()
   @IsNotEmpty()
-  coordinates: any; // Adjust type if you have a proper GeoJSON type
+  coordinates: any;
 
   @IsOptional()
   @IsNumber()
