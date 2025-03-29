@@ -1,22 +1,31 @@
 /* eslint-disable prettier/prettier */
-import {  IsInt, IsISO8601, IsMACAddress, IsString } from "class-validator";
+import {  IsBoolean, IsInt, IsISO8601, IsMACAddress, IsNotEmpty, IsString } from "class-validator";
 
 export class CreateDeviceDto {
   @IsInt()
-  TypeId: number;
+  @IsNotEmpty()
+  type_id: number;
+  
   @IsString()
-  SoftwareVersion: string;
-  // iso8601 means the date format is the following yyyy-MM-dd
+  @IsNotEmpty()
+  software_version: string;
+
   @IsISO8601()
-  DateOfService: string;
+  @IsNotEmpty()
+  date_of_service: string;
+
   @IsInt()
-  InitialStateId: number;
+  @IsNotEmpty()
+  state_type_id: number;
+
   @IsMACAddress()
-  MacAddress: string;
-  @IsInt({message : "Le niveau de la batterie doit etre un entier"})
-  BatteryLevel: number;
-  @IsString()
-  UserFirstName: string;
-  @IsString()
-  UserLastName: string;
+  @IsNotEmpty()
+  mac_address: string;
+
+  @IsInt() 
+  user_id: number | null;
+
+  @IsNotEmpty()
+  @IsBoolean()
+  comm_state: boolean;
 }
