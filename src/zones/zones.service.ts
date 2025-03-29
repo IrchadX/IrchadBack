@@ -1,0 +1,47 @@
+import { Injectable } from '@nestjs/common';
+import { PrismaService } from 'src/prisma/prisma.service';
+import { CreateZoneDto } from './dto/create-zone.dto';
+import { UpdateZoneDto } from './dto/update-zone.dto';
+
+@Injectable()
+export class ZonesService {
+  constructor(private readonly prisma: PrismaService) {}
+
+  async create(createZoneDto: CreateZoneDto) {
+    return this.prisma.zone.create({
+      data: {
+        name: createZoneDto.name,
+        description: createZoneDto.description,
+        coordinates: createZoneDto.coordinates, // Prisma handles JSON automatically
+      },
+    });
+  }
+
+  async findAll() {
+    return this.prisma.zone.findMany();
+  }
+
+  async findOne(id: number) {
+    return this.prisma.zone.findUnique({
+      where: { id },
+    });
+  }
+
+  async update(id: number, updateZoneDto: UpdateZoneDto) {
+    return this.prisma.zone.update({
+      where: { id },
+      data: {
+        name: updateZoneDto.name,
+        description: updateZoneDto.description,
+        coordinates: updateZoneDto.coordinates,
+      },
+    });
+  }
+
+  async remove(id: number) {
+    await this.prisma.zone.delete({
+      where: { id },
+    });
+    return { message: `Zone ${id} deleted` };
+  }
+}
