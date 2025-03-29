@@ -14,7 +14,7 @@ async function bootstrap() {
     allowedHeaders: ['Content-Type', 'Authorization'],
   });
 
-  // Global validation pipe
+  // Global validation pipe for all endpoints
   app.useGlobalPipes(new ValidationPipe());
 
   await app.listen(3000);
