@@ -7,6 +7,7 @@ import {
   Put,
   Get,
   Delete,
+  NotFoundException,
 } from '@nestjs/common';
 import { EnvironmentsService } from './environments.service';
 import { CreateEnvironmentDto } from './dto/create-environment.dto';
@@ -19,11 +20,6 @@ export class EnvironmentsController {
   @Get()
   async findAll() {
     return this.environmentsService.getAll();
-  }
-
-  @Get(':id')
-  async findOne(@Param('id') id: string) {
-    return this.environmentsService.getOne(id);
   }
 
   @Post()
@@ -39,8 +35,21 @@ export class EnvironmentsController {
     return this.environmentsService.update(id, updateEnvironmentDto);
   }
 
+  @Get(':id')
+  async findOne(@Param('id') id: string) {
+    const result = await this.environmentsService.getOne(id);
+    if (!result) {
+      throw new NotFoundException(`Environment with ID ${id} not found`);
+    }
+    return result;
+  }
+
   @Delete(':id')
   async remove(@Param('id') id: string) {
-    return this.environmentsService.delete(id);
+    const result = await this.environmentsService.delete(id);
+    if (!result) {
+      throw new NotFoundException(`Environment with ID ${id} not found`);
+    }
+    return result;
   }
 }

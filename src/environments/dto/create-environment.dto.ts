@@ -20,7 +20,7 @@ export class CreateEnvironmentDto {
     environment: {
       name: string; // Environment name
       isPublic: boolean; // Public/private flag
-      userId: number; // User ID (note: this is a string in the JSON)
+      userId?: number; // User ID (note: this is a string in the JSON)
       address?: string; // Optional address
     };
   };
