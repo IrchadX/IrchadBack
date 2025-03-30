@@ -13,12 +13,12 @@ export class SalesService {
           select: {
             first_name: true,
             family_name: true,
+            city : true,
           },
         },
         device: {
           select: {
-            mac_address: true,
-            software_version: true,
+            device_type: true,
           },
         },
       },
