@@ -41,7 +41,9 @@ export class EnvironmentsService {
     const environment = await this.prisma.environment.create({
       data: {
         name: properties.environment.name,
-        user_id: Number(properties.environment.userId),
+        user_id: properties.environment.userId
+          ? Number(properties.environment.userId)
+          : 0,
         address: properties.environment.address,
         map_id: map.id,
       },
