@@ -1,10 +1,10 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
-import { PrismaService } from 'src/prisma/prisma.service';
+import { PrismaService } from '../prisma/prisma.service';
 import { CreateEnvironmentDto } from './dto/create-environment.dto';
 import { UpdateEnvironmentDto } from './dto/update-environment.dto';
-import { CreateZoneDto } from 'src/zones/dto/create-zone.dto';
-import { CreatePoiDto } from 'src/pois/dto/create-poi.dto';
-import { POIZoneUtils } from 'src/utils/poi-zone.utils';
+import { CreateZoneDto } from '../zones/dto/create-zone.dto';
+import { CreatePoiDto } from '../pois/dto/create-poi.dto';
+import { POIZoneUtils } from '../utils/poi-zone.utils';
 
 @Injectable()
 export class EnvironmentsService {
@@ -15,12 +15,20 @@ export class EnvironmentsService {
   }
 
   async create(createEnvironmentDto: CreateEnvironmentDto) {
+    if (createEnvironmentDto.type !== 'FeatureCollection') {
+      throw new Error('Invalid GeoJSON format: Must be a FeatureCollection');
+    }
+
     const { features, properties } = createEnvironmentDto;
 
     console.log(
       'Incoming CreateEnvironmentDto:',
       JSON.stringify(createEnvironmentDto, null, 2),
     );
+
+    for (const feature of features) {
+      this.validateGeometry(feature.geometry);
+    }
 
     // create the map
     const map = await this.prisma.map.create({
@@ -102,15 +110,21 @@ export class EnvironmentsService {
     console.log('*** Extracted POIs:', pois);
 
     // Bulk insert zones and POIs
-    await this.prisma.zone.createMany({ data: zones });
-    await this.prisma.poi.createMany({ data: pois });
+    zones.length > 0 && (await this.prisma.zone.createMany({ data: zones }));
+    pois.length > 0 && (await this.prisma.poi.createMany({ data: pois }));
 
     // 🔍 Fetch inserted zones & POIs with IDs
-    const insertedZones = await this.prisma.zone.findMany();
-    const insertedPOIs = await this.prisma.poi.findMany();
+    const insertedZones = await this.prisma.zone.findMany({
+      where: { env_id: envId },
+    });
 
+    const insertedPOIs = await this.prisma.poi.findMany({
+      where: { env_id: envId },
+    });
     console.log('✅ Zones and POIs inserted successfully.');
-    this.poiZoneUtils.detectPOIsInsideZones(insertedZones, insertedPOIs);
+    insertedPOIs &&
+      insertedZones &&
+      this.poiZoneUtils.detectPOIsInsideZones(insertedZones, insertedPOIs);
 
     return { environment, zones, pois };
   }
@@ -125,13 +139,15 @@ export class EnvironmentsService {
     const updateData: any = {
       name: properties.environment.name,
       address: properties.environment.address,
-      isPublic: properties.environment.isPublic,
+      user_id: properties.environment.isPublic
+        ? null
+        : Number(properties.environment.userId),
     };
 
     let userId: number | null = null;
 
     // handle user_id logic based on `isPublic`
-    if (properties.environment.isPublic) {
+    if (properties.environment.userId == null) {
       updateData.user_id = null; // public environments don't have an owner
     } else if (properties.environment.userId) {
       userId = Number(properties.environment.userId);
@@ -299,7 +315,14 @@ export class EnvironmentsService {
         console.log(
           `✔️ Keeping ID ${newFeature.id}, removing from deleted list`,
         );
-        deletedIds.splice(deletedIds.indexOf(newFeature.id), 1);
+        for (const newFeature of newFeatures) {
+          if (newFeature.id) {
+            const index = deletedIds.indexOf(newFeature.id);
+            if (index > -1) {
+              deletedIds.splice(index, 1);
+            }
+          }
+        }
       }
     }
 
@@ -329,7 +352,11 @@ export class EnvironmentsService {
       throw new NotFoundException(`Environment with ID ${envId} not found.`);
     }
 
-    return environment;
+    return {
+      environment,
+      zones: environment.zone,
+      pois: environment.pois,
+    };
   }
 
   // deletes te environment whose id is 'id'
@@ -355,5 +382,70 @@ export class EnvironmentsService {
     return {
       message: `Environment ${envId} and its related data have been deleted.`,
     };
+  }
+
+  private validateGeometry(geometry: any): void {
+    if (!geometry || !geometry.type || !geometry.coordinates) {
+      throw new Error('Invalid geometry type');
+    }
+
+    switch (geometry.type) {
+      case 'Point':
+        if (
+          !Array.isArray(geometry.coordinates) ||
+          geometry.coordinates.length !== 2
+        ) {
+          throw new Error(
+            'Invalid Point coordinates: Expected [number, number]',
+          );
+        }
+        break;
+
+      case 'LineString':
+        if (
+          !Array.isArray(geometry.coordinates) ||
+          geometry.coordinates.length < 2 ||
+          !geometry.coordinates.every(
+            (coord: any) => Array.isArray(coord) && coord.length === 2,
+          )
+        ) {
+          throw new Error(
+            'Invalid LineString coordinates: Expected at least two [number, number] pairs',
+          );
+        }
+        break;
+
+      case 'Polygon':
+        if (
+          !Array.isArray(geometry.coordinates) ||
+          geometry.coordinates.length === 0 ||
+          !geometry.coordinates.every(
+            (ring: any) =>
+              Array.isArray(ring) &&
+              ring.length >= 4 &&
+              ring.every(
+                (coord: any) => Array.isArray(coord) && coord.length === 2,
+              ),
+          )
+        ) {
+          throw new Error(
+            'Invalid Polygon coordinates: Expected at least one ring with 4+ [number, number] pairs',
+          );
+        }
+
+        // Check if polygon is closed (first and last points should be equal)
+        const firstRing = geometry.coordinates[0];
+        const firstPoint = firstRing[0];
+        const lastPoint = firstRing[firstRing.length - 1];
+        if (firstPoint[0] !== lastPoint[0] || firstPoint[1] !== lastPoint[1]) {
+          throw new Error(
+            'Invalid Polygon: First and last points must be equal',
+          );
+        }
+        break;
+
+      default:
+        throw new Error(`Unsupported geometry type`);
+    }
   }
 }

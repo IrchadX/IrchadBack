@@ -20,7 +20,7 @@ export class UpdateEnvironmentDto {
     environment: {
       name?: string; // Optional environment name
       isPublic?: boolean; // Optional public/private flag
-      userId?: string; // Optional user ID (note: this is a string in the JSON)
+      userId?: number; // Optional userId
       address?: string; // Optional address
     };
   };
