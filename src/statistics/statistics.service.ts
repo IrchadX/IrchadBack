@@ -41,7 +41,7 @@ export class StatisticsService {
   async getInactiveDeviceCount(): Promise<number> {
     return this.prisma.device.count({
       where: {
-        comm_state: 'INACTIVE',
+        comm_state: false,
       },
     });
   }

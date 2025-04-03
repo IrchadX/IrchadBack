@@ -1,22 +1,15 @@
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
-import { ValidationPipe } from '@nestjs/common';
-// this file is the entry point of our backend
+import * as express from 'express';
+import { join } from 'path';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
 
-  // Enable CORS
-  app.enableCors({
-    origin: ['http://localhost:3001', 'http://localhost:3000'], // Your NextJS frontend URLs
-    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-    credentials: true,
-    allowedHeaders: ['Content-Type', 'Authorization'],
-  });
+  app.enableCors(); // Autoriser les requêtes depuis un autre domaine
 
-  // Global validation pipe
-  app.useGlobalPipes(new ValidationPipe());
+  app.use('/uploads', express.static(join(__dirname, '../uploads'))); // Servir les fichiers statiques
 
-  await app.listen(3001);
+  await app.listen(3001); // Port du back-end
 }
 bootstrap();

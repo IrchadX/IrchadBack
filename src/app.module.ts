@@ -9,11 +9,15 @@ import { AppService } from './app.service';
 import { DevicesModule } from './devices/devices.module';
 import { ReportsModule } from './reports/reports.module';
 import { StatisticsModule } from './statistics/statistics.module';
+import { GraphicsModule } from './graphics/graphics.module';
+import { GraphicsController } from './graphics/graphics.controller'; 
+import { GraphicsService } from './graphics/graphics.service'; 
+
 
 @Module({
   imports: [
     ConfigModule.forRoot({
-      isGlobal: true, // This makes ConfigModule available globally
+      isGlobal: true, 
     }),
     PrismaModule,
     UsersModule,
@@ -21,8 +25,9 @@ import { StatisticsModule } from './statistics/statistics.module';
     DevicesModule,
     ReportsModule,
     StatisticsModule,
+    GraphicsModule,
   ],
-  controllers: [AppController],
-  providers: [AppService],
+  controllers: [AppController,GraphicsController],
+  providers: [AppService,GraphicsService],
 })
 export class AppModule {}
