@@ -20,7 +20,6 @@ export class CreatePoiDto {
   description?: string | null;
 
   @IsArray()
-  @IsNotEmpty()
   coordinates: any;
 
   @IsOptional()

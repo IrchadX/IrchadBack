@@ -8,18 +8,27 @@ import {
   Get,
   Delete,
   NotFoundException,
+  Query,
 } from '@nestjs/common';
 import { EnvironmentsService } from './environments.service';
 import { CreateEnvironmentDto } from './dto/create-environment.dto';
 import { UpdateEnvironmentDto } from './dto/update-environment.dto';
+import { FiltersDto } from './dto/filter.dto';
 
 @Controller('environments')
 export class EnvironmentsController {
   constructor(private readonly environmentsService: EnvironmentsService) {}
 
   @Get()
-  async findAll() {
-    return this.environmentsService.getAll();
+  async findAll(
+    @Query('search') search: string,
+    @Query('visibility') visibility: string[],
+  ) {
+    const filters = {
+      visibility: visibility ?? [],
+    };
+
+    return this.environmentsService.getAll(filters, search ?? '');
   }
 
   @Post()

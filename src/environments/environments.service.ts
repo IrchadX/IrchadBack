@@ -5,6 +5,7 @@ import { UpdateEnvironmentDto } from './dto/update-environment.dto';
 import { CreateZoneDto } from '../zones/dto/create-zone.dto';
 import { CreatePoiDto } from '../pois/dto/create-poi.dto';
 import { POIZoneUtils } from '../utils/poi-zone.utils';
+import { FiltersDto } from './dto/filter.dto';
 
 @Injectable()
 export class EnvironmentsService {
@@ -41,7 +42,7 @@ export class EnvironmentsService {
     const environment = await this.prisma.environment.create({
       data: {
         name: properties.environment.name,
-        user_id: Number(properties.environment.userId),
+        is_public: properties.environment.isPublic,
         address: properties.environment.address,
         map_id: map.id,
       },
@@ -50,7 +51,7 @@ export class EnvironmentsService {
     console.log('Created Environment:', environment);
 
     const envId = environment.id;
-
+    const userId = Number(properties.environment.userId);
     const environmentFeature = features.find(
       (f) => f.properties.type === 'environment',
     );
@@ -65,15 +66,13 @@ export class EnvironmentsService {
       console.log('✅ Inserted environment delimiter.');
     }
 
-    console.log(
-      `🔗 Associating environment ${envId} with user ${environment.user_id}`,
-    );
-
     // create environment -> user correspondance
     if (properties.environment.userId) {
+      console.log(`🔗 Associating environment ${envId} with user ${userId}`);
+
       await this.prisma.env_user.create({
         data: {
-          user_id: Number(properties.environment.userId),
+          user_id: userId,
           env_id: envId,
         },
       });
@@ -139,20 +138,10 @@ export class EnvironmentsService {
     const updateData: any = {
       name: properties.environment.name,
       address: properties.environment.address,
-      user_id: properties.environment.isPublic
-        ? null
-        : Number(properties.environment.userId),
+      is_public: properties.environment.isPublic,
     };
 
-    let userId: number | null = null;
-
-    // handle user_id logic based on `isPublic`
-    if (properties.environment.userId == null) {
-      updateData.user_id = null; // public environments don't have an owner
-    } else if (properties.environment.userId) {
-      userId = Number(properties.environment.userId);
-      updateData.user_id = userId; // update the user_id field
-    }
+    let userId: number | null = Number(properties.environment.userId);
 
     // update the environment information
     const environment = await this.prisma.environment.update({
@@ -331,9 +320,34 @@ export class EnvironmentsService {
     return { added, updated, deletedIds };
   }
 
-  // returns a list of al the environments
-  async getAll() {
-    return this.prisma.environment.findMany();
+  async getAll(filters: FiltersDto = {}, searchValue: string = '') {
+    const environments = await this.prisma.environment.findMany({
+      where: {
+        AND: [
+          searchValue
+            ? {
+                OR: [
+                  { name: { contains: searchValue, mode: 'insensitive' } },
+                  { address: { contains: searchValue, mode: 'insensitive' } },
+                ],
+              }
+            : {},
+
+          filters.visibility?.length
+            ? filters.visibility.includes('Public') &&
+              filters.visibility.includes('Privé')
+              ? {} // no filtering, show all (both selected)
+              : {
+                  is_public: filters.visibility.includes('Public')
+                    ? true
+                    : false,
+                }
+            : {},
+        ],
+      },
+    });
+
+    return environments;
   }
 
   // returns one environment whose id is 'id'
