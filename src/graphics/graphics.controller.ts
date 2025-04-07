@@ -9,4 +9,9 @@ export class GraphicsController {
   async getPannesByDeviceType() {
     return this.GraphicsService.getPannesByDeviceType();
   }
+  @Get('courbe')
+getGlobalSalesByMonth() {
+  return this.GraphicsService.getGlobalSalesByMonth();
+}
+
 }

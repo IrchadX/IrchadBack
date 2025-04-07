@@ -60,5 +60,17 @@ export class StatisticsService {
     return this.prisma.alert.findMany();
   }
   
+  async getTechnicalInterventionPercentage(): Promise<number> {
+    const total = await this.prisma.intervention_history.count();
+    const techniques = await this.prisma.intervention_history.count({
+      where: {
+        type: 'technique',
+      },
+    });
+  
+    if (total === 0) return 0;
+    return (techniques / total) * 100;
+  }
+  
   
 }

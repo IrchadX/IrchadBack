@@ -23,7 +23,6 @@ model user {
   birth_date                              DateTime?
   device                                  device[]
   env_user                                env_user[]
-  environment                             environment[]
   helper_user_helper_user_helper_idTouser helper_user[]          @relation("helper_user_helper_idTouser")
   helper_user_helper_user_user_idTouser   helper_user[]          @relation("helper_user_user_idTouser")
   intervention_history                    intervention_history[]
@@ -63,6 +62,7 @@ model device {
   date_of_service  DateTime           @db.Date
   comm_state       Boolean
   connection_state Boolean?           @default(true)
+  battery_capacity Int                @default(0)
   alert            alert[]
   device_type      device_type        @relation(fields: [type_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
   user             user?              @relation(fields: [user_id], references: [id], onUpdate: NoAction)
@@ -82,15 +82,15 @@ model state_type {
 
 /// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
 model intervention_history {
-  id               Int       @id @default(autoincrement())
+  id               Int                @id @default(autoincrement())
   device_id        Int?
   maintenancier_id Int?
-  scheduled_date   DateTime  @db.Timestamp(6)
-  completion_date  DateTime? @db.Timestamp(6)
+  scheduled_date   DateTime           @db.Timestamp(6)
+  completion_date  DateTime?          @db.Timestamp(6)
   description      String?
-  type             String?
   status           String?
-  user             user?     @relation(fields: [maintenancier_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  type             intervention_type?
+  user             user?              @relation(fields: [maintenancier_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
 }
 
 /// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
@@ -107,14 +107,13 @@ model environment {
   id          Int        @id @default(autoincrement())
   name        String     @db.VarChar
   description String?    @db.VarChar
-  user_id     Int?
   address     String?    @db.VarChar
   created_at  DateTime?  @default(now()) @db.Timestamptz(6)
   updated_at  DateTime?  @db.Timestamp(6)
   map_id      Int?
+  is_public   Boolean?   @default(false)
   env_user    env_user[]
   map         map?       @relation(fields: [map_id], references: [id], onDelete: Cascade)
-  user        user?      @relation(fields: [user_id], references: [id], onDelete: NoAction)
   poi         poi[]
   zone        zone[]
 }
@@ -221,4 +220,22 @@ model purchase_history {
   device_id Int?
   device    device?  @relation(fields: [device_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
   user      user?    @relation(fields: [user_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+}
+
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model emergency_contact {
+  id     BigInt  @id @default(autoincrement())
+  label  String? @db.VarChar
+  number String? @db.VarChar
+}
+
+enum intervention_type {
+  technique
+  Non_technique @map("Non technique")
+}
+
+enum type {
+  technique
+  Non_technique @map("Non technique")
 }

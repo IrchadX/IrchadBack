@@ -43,4 +43,37 @@ export class GraphicsService {
 
     return pannePercentages;
   }
+  async getGlobalSalesByMonth(): Promise<any[]> {
+    const currentYear = new Date().getFullYear();
+  
+    const sales = await this.prisma.purchase_history.findMany({
+      where: {
+        date: {
+          gte: new Date(`${currentYear}-01-01`),
+          lt: new Date(`${currentYear + 1}-01-01`)
+        }
+      },
+      select: { date: true }
+    });
+  
+    const monthLabels = ["Jan", "Fev", "Mar", "Avr", "Mai", "Jun",
+                         "Jul", "Aou", "Sep", "Oct", "Nov", "Dec"];
+  
+    const salesByMonth: Record<string, number> = {};
+  
+    sales.forEach(({ date }) => {
+      if (date) {
+        const d = new Date(date);
+        const month = monthLabels[d.getMonth()];
+        salesByMonth[month] = (salesByMonth[month] || 0) + 1;
+      }
+    });
+  
+    return monthLabels.map(month => ({
+      month,
+      sales: salesByMonth[month] || 0,
+    }));
+  }
+  
+  
 }

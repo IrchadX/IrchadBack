@@ -23,7 +23,7 @@ export class StatisticsController {
       return { totalDevice };
     } catch (error) {
       console.error('Erreur lors de la récupération du nombre de dispositifs:', error);
-      return { totalDevice: 0 }; // Retourne 0 en cas d'erreur
+      return { totalDevice: 0 }; 
     }
   }
   @Get('inactive-device-count')
@@ -41,5 +41,11 @@ export class StatisticsController {
     const alerts = await this.statisticsService.getAllAlerts();
     return { alerts };
   }
+  @Get('interventions')
+async getTechnicalInterventionPercentage() {
+  const percentage = await this.statisticsService.getTechnicalInterventionPercentage();
+  return { percentage: percentage.toFixed(2) }; // ex: { percentage: "78.57" }
+}
+
   
 }
