@@ -72,5 +72,4 @@ export class StatisticsService {
     return (techniques / total) * 100;
   }
   
-  
 }
