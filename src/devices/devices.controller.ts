@@ -2,8 +2,6 @@ import { Controller, Get, Param, Post } from '@nestjs/common';
 import { DevicesService } from './devices.service';
 
 
-// it means all the http endpoints start with /devices
-
 @Controller('devices')
 export class DevicesController {
   constructor(private readonly devicesService: DevicesService) {}
