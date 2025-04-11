@@ -4,7 +4,6 @@ import { Body, Controller, Delete, Get, Param, Patch, Post, UsePipes, Validation
 import { CreateDeviceDto } from './dto/CreateDevice.dto'; 
 import { UpdateDeviceDto } from './dto/UpdateDevice.dto';
 import { DeviceService } from './device.service'; 
-import { ConnectableObservable } from 'rxjs';
  
 @Controller('devices') 
 export class DevicesController { 
@@ -26,10 +25,31 @@ export class DevicesController {
     try {
       return await this.service.createDevice(body); 
     } catch (error) {
+      console.error("Error creating device:", error);
       throw new HttpException('Failed to create device', HttpStatus.BAD_REQUEST);
     }
   } 
- 
+  @Get('types/')
+  async getDeviceTypes()
+  {
+
+    try {
+      const types = await this.service.getDeviceTypes();
+      return types;
+    } catch (error) {
+      throw new HttpException('Failed to fetch device types', HttpStatus.INTERNAL_SERVER_ERROR);
+    }
+  }
+
+  @Get('users/all')
+  async UsersWithNoDevicd() {
+    try {
+      const stateTypes = await this.service.getUsersWithNoDevices();
+      return stateTypes;
+    } catch (error) {
+      throw new HttpException('Failed to fetch state types', HttpStatus.INTERNAL_SERVER_ERROR);
+    }
+  }
   @Get(':id') 
   async getDeviceById(@Param('id') id: string) { 
     try {
@@ -42,7 +62,7 @@ export class DevicesController {
       if (error instanceof NotFoundException) {
         throw error;
       }
-      throw new HttpException('Failed to fetch device', HttpStatus.INTERNAL_SERVER_ERROR);
+      throw new HttpException('Failed to fetch device77777777777', HttpStatus.INTERNAL_SERVER_ERROR);
     }
   } 
   
@@ -62,6 +82,7 @@ export class DevicesController {
       throw new HttpException('Failed to update device', HttpStatus.INTERNAL_SERVER_ERROR);
     }
   }
+  
   
   @Delete(':id')
   async deleteDevice(@Param('id') id: string) {
@@ -99,5 +120,15 @@ export class DevicesController {
       throw new HttpException('Failed to fetch devices by type ID', HttpStatus.INTERNAL_SERVER_ERROR);
     }
   }
+  @Get('stateTypes/all')
+  async getStateTypes() {
+    try {
+      const stateTypes = await this.service.getStateTypes();
+      return stateTypes;
+    } catch (error) {
+      throw new HttpException('Failed to fetch state types', HttpStatus.INTERNAL_SERVER_ERROR);
+    }
+  }
+
 
 } 

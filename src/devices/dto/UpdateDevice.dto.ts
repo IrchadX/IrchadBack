@@ -1,16 +1,20 @@
 import { IsBoolean, IsInt, IsISO8601, IsMACAddress, IsOptional, IsString } from "class-validator";
+import { Transform } from 'class-transformer';
 
 export class UpdateDeviceDto {
       @IsString()
       @IsOptional()
       software_version?: string;
     
+      
       @IsISO8601()
       @IsOptional()
-      date_of_service?: string;
-    
+      @Transform(({ value }) => new Date(value).toISOString()) 
+      date_of_service: string;
+
       @IsInt()
       @IsOptional()
+      @Transform(({ value }) => Number(value)) 
       state_type_id?: number;
     
       @IsMACAddress()
@@ -19,6 +23,7 @@ export class UpdateDeviceDto {
     
       @IsInt() 
       @IsOptional()
+      @Transform(({ value }) => Number(value)) 
       user_id?: number;
     
       @IsBoolean()

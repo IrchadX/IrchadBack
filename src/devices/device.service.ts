@@ -19,6 +19,7 @@ export class DeviceService {
         mac_address: device.mac_address,
         user_id: device.user_id,
         comm_state: device.comm_state,
+        battery_capacity: device.battery_capacity,
       };
     });
   
@@ -76,5 +77,32 @@ async setUser(id: number, user_id: number) {
           state_type_id: id,
         },
       });
+    }
+    async getDeviceTypes()
+    {
+      return this.prisma.device_type.findMany({
+       
+      });
+    }
+    async getStateTypes()
+    {
+      return this.prisma.state_type.findMany({
+        
+      });
+    }
+    async getUsersWithNoDevices() {
+      const users = await this.prisma.user.findMany({
+        where: {
+          userTypeId: 7,
+          device: {
+            none: {} 
+          }
+        },
+        include: {
+          userType: true 
+        }
+      });
+      
+      return users;
     }
 }
