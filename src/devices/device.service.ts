@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-unsafe-assignment */
 /* eslint-disable prettier/prettier */
 import { Injectable } from '@nestjs/common';
-import { PrismaService } from 'src/prisma/prisma.service';
+import { PrismaService } from '../prisma/prisma.service';
 import { CreateDeviceDto } from './dto/CreateDevice.dto';
 import { UpdateDeviceDto} from './dto/UpdateDevice.dto';
 @Injectable() 
