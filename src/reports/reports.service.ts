@@ -1,104 +1,295 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
-import * as PDFDocument from 'pdfkit';
-import * as fs from 'fs';
-import * as path from 'path';
+import { ReportFilterDto } from '../dto/filter.dto';
+import pdfMake from './pdfmake-wrapper';
+
 @Injectable()
 export class ReportsService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(private prisma: PrismaService) {}
 
-  async fetchDataFromPrisma() {
-    const totalDevices = await this.prisma.device.count();
-    const inactiveDevices = await this.prisma.device.count({
-      where: { comm_state: false }
-    });
-
-    const abandonByDeviceType = await this.prisma.device.groupBy({
-      by: ['type_id'],
-      _count: { id: true },
-      where: { comm_state: false }
-    });
-
-    const deviceTypes = await this.prisma.device_type.findMany();
-    const deviceTypeMap = Object.fromEntries(deviceTypes.map(d => [d.id, d.type]));
-
-    const formattedAbandonByDeviceType = abandonByDeviceType.map(item => ({
-      type: deviceTypeMap[item.type_id ?? 0] || 'Inconnu',
-      count: typeof item._count === 'object' ? item._count?.id ?? 0 : 0,
-    }));
-    
-
+  private getDateFilter(filter: ReportFilterDto): { gte?: Date; lte?: Date } {
+    if (!filter.startDate || !filter.endDate) return {};
     return {
-      totalDevices,
-      inactiveDevices,
-      abandonByDeviceType: formattedAbandonByDeviceType,
+      gte: new Date(filter.startDate),
+      lte: new Date(filter.endDate),
     };
   }
 
-  async generateAbandonReport(): Promise<string> {
-    const reportData = await this.fetchDataFromPrisma();
-    if (!reportData) {
-      console.error('Échec de la récupération des données.');
-      return '';
-    }
-
-    const filePath = 'abandon_report.pdf';
-    const doc = new PDFDocument({ margin: 50 });
-    const stream = fs.createWriteStream(filePath);
-    doc.pipe(stream);
-
-    const logoPath = path.join(__dirname, 'logoo.png');
-    console.log("🔍 Chemin du logo :", logoPath);
-    if (fs.existsSync(logoPath)) {
-      doc.image(logoPath, 220, 30, { width: 150 });
-    }
-
-    doc.moveDown(3);
-    doc
-      .font('Helvetica-Bold')
-      .fontSize(22)
-      .text('Rapport d\'Abandon des Appareils', { align: 'center' })
-      .moveDown(2);
-
-    doc
-      .font('Helvetica-Bold')
-      .fontSize(14)
-      .text(`Nombre total d'appareils : ${reportData.totalDevices}`)
-      .moveDown(0.5);
-    doc
-      .text(`Nombre d'appareils inactifs : ${reportData.inactiveDevices}`)
-      .moveDown(1.5);
-
-    // ✅ Création de la table
-    doc
-      .font('Helvetica-Bold')
-      .fontSize(14)
-      .text('Abandon par type d’appareil :', { underline: true })
-      .moveDown(1);
-
-    const startX = 100;
-    const startY = doc.y;
-    const columnWidths = [250, 150];
-    const rowHeight = 25;
-
-    // ✅ En-tête du tableau
-    doc.rect(startX, startY, columnWidths[0], rowHeight).stroke();
-    doc.rect(startX + columnWidths[0], startY, columnWidths[1], rowHeight).stroke();
-    doc.text('Type d\'appareil', startX + 10, startY + 7);
-    doc.text('Nombre', startX + columnWidths[0] + 10, startY + 7);
-
-    // ✅ Contenu du tableau
-    let yOffset = startY + rowHeight;
-    reportData.abandonByDeviceType.forEach((item) => {
-      doc.rect(startX, yOffset, columnWidths[0], rowHeight).stroke();
-      doc.rect(startX + columnWidths[0], yOffset, columnWidths[1], rowHeight).stroke();
-      doc.text(item.type, startX + 10, yOffset + 7);
-      doc.text(item.count.toString(), startX + columnWidths[0] + 10, yOffset + 7);
-      yOffset += rowHeight;
+  // Récupérer les statistiques de pannes par type de dispositif
+  async getPannesByDeviceType(): Promise<any> {
+    const pannes = await this.prisma.panne_history.findMany({
+      include: {
+        alert: {
+          include: {
+            device: {
+              include: {
+                device_type: true,
+              },
+            },
+          },
+        },
+      },
     });
 
-    doc.end();
+    const panneStats = pannes.reduce((acc, panne) => {
+      const deviceType = panne.alert?.device?.device_type?.type;
 
-    return filePath;
+      if (deviceType) {
+        if (!acc[deviceType]) {
+          acc[deviceType] = 1;
+        } else {
+          acc[deviceType]++;
+        }
+      }
+      return acc;
+    }, {});
+
+    const totalPannes = pannes.length;
+    const pannePercentages = Object.keys(panneStats).map((type) => {
+      return {
+        deviceType: type,
+        percentage: ((panneStats[type] / totalPannes) * 100).toFixed(2), // pourcentage
+        count: panneStats[type], // nombre de pannes
+      };
+    });
+
+    return pannePercentages;
   }
-}
+
+  async getFleetStatusReport(filter: ReportFilterDto) {
+    const dateFilter = this.getDateFilter(filter);
+
+    const [total, inService, inMaintenance, faulty] = await Promise.all([
+      this.prisma.device.count({ where: { date_of_service: dateFilter } }),
+      this.prisma.device.count({
+        where: {
+          date_of_service: dateFilter,
+          state_type: {
+            state: 'en_service',
+          },
+        },
+      }),
+      this.prisma.device.count({
+        where: {
+          date_of_service: dateFilter,
+          state_type: {
+            state: 'en_maintenance',
+          },
+        },
+      }),
+      this.prisma.device.count({
+        where: {
+          date_of_service: dateFilter,
+          state_type: {
+            state: 'defectueux',
+          },
+        },
+      }),
+    ]);
+
+    return {
+      totalDevices: total,
+      inService,
+      inMaintenance,
+      faulty,
+      percentageInService: total ? ((inService / total) * 100).toFixed(2) : '0',
+      percentageInMaintenance: total ? ((inMaintenance / total) * 100).toFixed(2) : '0',
+      percentageFaulty: total ? ((faulty / total) * 100).toFixed(2) : '0',
+    };
+  }
+  async getAlertLevelsReport(): Promise<any> {
+    const pannes = await this.prisma.panne_history.findMany({
+      include: {
+        alert: {
+          include: {
+            device: {
+              include: {
+                device_type: true,
+              },
+            },
+          },
+        },
+      },
+    });
+  
+    const alertStats = pannes.reduce((acc, panne) => {
+      const alertLevel = panne.alert?.level; // On suppose que 'level' est un champ de l'alerte
+  
+      if (alertLevel) {
+        if (!acc[alertLevel]) {
+          acc[alertLevel] = 1;
+        } else {
+          acc[alertLevel]++;
+        }
+      }
+      return acc;
+    }, {});
+  
+    const totalPannes = pannes.length;
+    const alertLevelPercentages = Object.keys(alertStats).map((level) => {
+      return {
+        level,
+        percentage: ((alertStats[level] / totalPannes) * 100).toFixed(2), // pourcentage
+        count: alertStats[level], // nombre de pannes par niveau d'alerte
+      };
+    });
+  
+    return alertLevelPercentages;
+  }
+  async getDevicesByType(): Promise<any> {
+    const devices = await this.prisma.device.findMany({
+      include: {
+        device_type: true,
+      },
+    });
+  
+    const typeStats = devices.reduce((acc, device) => {
+      const type = device.device_type?.type || 'Inconnu';
+  
+      if (!acc[type]) {
+        acc[type] = 1;
+      } else {
+        acc[type]++;
+      }
+  
+      return acc;
+    }, {} as Record<string, number>);
+  
+    const total = devices.length;
+    const typePercentages = Object.entries(typeStats).map(([type, count]) => ({
+      deviceType: type,
+      count,
+      percentage: ((count / total) * 100).toFixed(2),
+    }));
+  
+    return typePercentages;
+  }
+  async getAverageMaintenanceDuration(): Promise<any> {
+    const interventions = await this.prisma.intervention_history.findMany({
+      where: {
+        NOT: [
+          { completion_date: null },
+        ],
+      },
+    });
+  
+    if (interventions.length === 0) {
+      return { averageDurationDays: 0, count: 0 };
+    }
+  
+    const totalDurationMs = interventions.reduce((acc, intervention) => {
+      const { scheduled_date, completion_date } = intervention; // <= ici tu déclares les deux
+
+  if (!scheduled_date || !completion_date) return acc;
+
+  const start = new Date(scheduled_date).getTime();
+  const end = new Date(completion_date).getTime();
+      const duration = end - start;
+      return acc + duration;
+    }, 0);
+  
+    const averageDurationMs = totalDurationMs / interventions.length;
+    const averageDurationDays = (averageDurationMs / (1000 * 60 * 60 * 24)).toFixed(2);
+  
+    return {
+      averageDurationDays,
+      count: interventions.length,
+    };
+  }
+  async generateFleetStatusPDF(filter: ReportFilterDto): Promise<Buffer> {
+    const fleetStatusData = await this.getFleetStatusReport(filter);
+    const pannePercentages = await this.getPannesByDeviceType();
+    const alertLevelsData = await this.getAlertLevelsReport();
+    const deviceTypeStats = await this.getDevicesByType();
+    const averageMaintenance = await this.getAverageMaintenanceDuration();
+  
+    const docDefinition = {
+      content: [
+        { text: 'Rapport de dispositifs', style: 'header' },
+  
+        { text: 'État général de la flotte', style: 'subHeader' },
+        {
+          table: {
+            widths: ['*', '*'],
+            body: [
+              ['Total dispositifs', `${fleetStatusData.totalDevices}`],
+              ['En service', `${fleetStatusData.inService} (${fleetStatusData.percentageInService}%)`],
+              ['En maintenance', `${fleetStatusData.inMaintenance} (${fleetStatusData.percentageInMaintenance}%)`],
+              ['Défectueux', `${fleetStatusData.faulty} (${fleetStatusData.percentageFaulty}%)`],
+            ],
+          },
+        },
+  
+        { text: '\nRépartition des dispositifs par type', style: 'subHeader' },
+        {
+          table: {
+            widths: ['*', '*', '*'],
+            body: [
+              ['Type de dispositif', 'Nombre', 'Pourcentage'],
+              ...deviceTypeStats.map((stat) => [stat.deviceType, stat.count, `${stat.percentage}%`]),
+            ],
+          },
+        },
+  
+        { text: '\nPannes par Type de Dispositif', style: 'subHeader' },
+        {
+          table: {
+            widths: ['*', '*', '*'],
+            body: [
+              ['Type de dispositif', 'Nombre de pannes', 'Pourcentage'],
+              ...pannePercentages.map((stat) => [stat.deviceType, stat.count, `${stat.percentage}%`]),
+            ],
+          },
+        },
+  
+        { text: '\nTaux des alertes par niveau', style: 'subHeader' },
+        {
+          table: {
+            widths: ['*', '*', '*'],
+            body: [
+              ['Niveau d\'alerte', 'Nombre d\'alertes', 'Pourcentage'],
+              ...alertLevelsData.map((alert) => [alert.level, alert.count, `${alert.percentage}%`]),
+            ],
+          },
+        },
+  
+        {
+          text: '\nDurée moyenne de maintenance', style: 'subHeader'
+        },
+        {
+          text: `Nombre d'interventions analysées : ${averageMaintenance.count}`
+        },
+        {
+          text: `Durée moyenne : ${averageMaintenance.averageDurationDays} jours`
+        },
+        
+     
+      ],
+  
+      styles: {
+        header: {
+          alignment: 'center',
+          fontSize: 20,
+          margin: [0, 10, 0, 20],
+          bold: true,
+        },
+        subHeader: {
+          fontSize: 16,
+          bold: true,
+          margin: [0, 10, 0, 5],
+        },
+        table: {
+          margin: [0, 5, 0, 5],
+        },
+      },
+    };
+  
+    const pdfDocGenerator = pdfMake.createPdf(docDefinition);
+  
+    return new Promise((resolve, reject) => {
+      pdfDocGenerator.getBuffer((buffer: ArrayBuffer) => {
+        resolve(Buffer.from(buffer));
+      });
+    });
+  }
+}  

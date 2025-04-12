@@ -1,19 +1,20 @@
-import { Controller, Get, Res } from '@nestjs/common';
+import { Controller, Get, Query, Res } from '@nestjs/common';
 import { ReportsService } from './reports.service';
+import { ReportFilterDto } from '../dto/filter.dto';
 import { Response } from 'express';
-import * as path from 'path';
+
 @Controller('reports')
 export class ReportsController {
   constructor(private readonly reportsService: ReportsService) {}
-/*
-  @Get(':filename')
-  downloadReport(@Param('filename') filename: string, @Res() res: Response) {
-    const filePath = path.join(__dirname, '../../uploads', filename);
 
-    res.download(filePath, filename, (err) => {
-      if (err) {
-        res.status(500).send({ message: 'Erreur lors du téléchargement du fichier' });
-      }
-    });
-  }*/
+
+
+  @Get('pdf')
+  async getFleetStatusPDF(@Query() filter: ReportFilterDto, @Res() res: Response) {
+    const pdfBuffer = await this.reportsService.generateFleetStatusPDF(filter);
+
+    res.setHeader('Content-Type', 'application/pdf');
+    res.setHeader('Content-Disposition', 'attachment; filename=Rapport-Dispositifs.pdf');
+    res.send(pdfBuffer);
+  }
 }
