@@ -104,4 +104,37 @@ export class OffersService {
       };
     });
   }
+
+  /**
+   * Récupérer les environnements d'un utilisateur donné
+   * @param userId ID de l'utilisateur
+   */
+
+  async getUserDevice(userId: number) {
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId },
+    });
+
+    if (!user) {
+      throw new NotFoundException(`Utilisateur avec l'ID ${userId} introuvable`);
+    }
+
+    // get the user device
+     return await this.prisma.device.findMany({
+      where: {
+        user_id: userId,
+      },
+      select: {
+        id: true,
+        date_of_service: true,
+        price: true,
+        device_type: {
+          select: {
+            type: true,
+          },
+        },
+      },
+    });
+  }
+
 }

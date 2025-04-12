@@ -56,4 +56,25 @@ export class OffersController {
       );
     }
   }
+
+  /**
+   * Calculer le prix de chaque environnement pour un utilisateur donné
+   * @param userId ID de l'utilisateur
+   */
+  @Get('user-device/:userId')
+  async getUserDevice(@Param('userId', ParseIntPipe) userId: number) {
+    try {
+      return await this.offersService.getUserDevice(userId);
+    } catch (error) {
+      console.error('Error in getUserDevice:', error);
+
+      if (error instanceof NotFoundException) {
+        throw error;
+      }
+
+      throw new BadRequestException(
+        `Une erreur s'est produite lors de lrécupération du dispositif de l'utilisateur avec l'ID ${userId}: ${error.message}`,
+      );
+    }
+  }
 }

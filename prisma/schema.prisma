@@ -32,6 +32,7 @@ model device {
   comm_state       Boolean
   connection_state Boolean?           @default(true)
   battery_capacity Int                @default(0)
+  price            Float?             @db.Real
   alert            alert[]
   state_type       state_type         @relation(fields: [state_type_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
   device_type      device_type        @relation(fields: [type_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
@@ -214,7 +215,7 @@ model user {
   helper_user_helper_user_user_idTouser   helper_user[]          @relation("helper_user_user_idTouser")
   intervention_history                    intervention_history[]
   purchase_history                        purchase_history[]
-  userType                               user_type?             @relation(fields: [userTypeId], references: [id], onDelete: Cascade)
+  userType                                user_type?             @relation(fields: [userTypeId], references: [id], onDelete: Cascade)
 }
 
 model user_type {
