@@ -8,6 +8,7 @@ import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { DevicesModule } from './devices/devices.module';
 import { SalesModule } from './sales/sales.module';
+import { OffersModule } from './offers/offers.module';
 import { EnvironmentsModule } from './environments/environments.module';
 import { ZonesModule } from './zones/zones.module';
 import { PoisModule } from './pois/pois.module';
@@ -23,6 +24,7 @@ import { PrismaService } from './prisma/prisma.service';
     AuthModule,
     DevicesModule,
     SalesModule,
+    OffersModule,
     EnvironmentsModule,
     ZonesModule,
     PoisModule,

@@ -140,28 +140,18 @@ export class UsersService {
 
       // Filter by user type
       if (filters?.userType) {
-        if (Array.isArray(filters.userType)) {
-          // If multiple types are provided
-          const userTypes = await this.prisma.user_type.findMany({
-            where: { type: { in: filters.userType } },
-          });
-      
-          if (userTypes.length > 0) {
-            whereClause.userTypeId = { in: userTypes.map((type) => type.id) };
-          } else {
-            return []; // No users found for these types
-          }
+        const userTypes = await this.prisma.user_type.findMany();
+        console.log(`All user types: ${JSON.stringify(userTypes)}`);
+
+        // Fetch the userTypeId for the given type
+        const userType = await this.prisma.user_type.findFirst({
+          where: { type: filters.userType },
+        });
+
+        if (userType) {
+          whereClause.userTypeId = userType.id; // Filter by userTypeId
         } else {
-          // If a single type is provided
-          const userType = await this.prisma.user_type.findFirst({
-            where: { type: filters.userType },
-          });
-      
-          if (userType) {
-            whereClause.userTypeId = userType.id;
-          } else {
-            return []; // No users found for this type
-          }
+          return [];
         }
       }
 
