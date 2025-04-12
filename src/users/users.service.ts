@@ -145,7 +145,7 @@ export class UsersService {
 
         // Fetch the userTypeId for the given type
         const userType = await this.prisma.user_type.findFirst({
-          where: { type: filters.userType },
+          where: { type:{ in: filters.userType }  },
         });
 
         if (userType) {
