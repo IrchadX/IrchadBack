@@ -42,6 +42,7 @@ export class EnvironmentsService {
     const environment = await this.prisma.environment.create({
       data: {
         name: properties.environment.name,
+        description: properties.environment.description,
         is_public: properties.environment.isPublic,
         address: properties.environment.address,
         map_id: map.id,
@@ -139,8 +140,10 @@ export class EnvironmentsService {
       name: properties.environment.name,
       address: properties.environment.address,
       is_public: properties.environment.isPublic,
+      description: properties.environment.description,
     };
 
+    console.log(updateData);
     let userId: number | null = Number(properties.environment.userId);
 
     // update the environment information
@@ -244,16 +247,38 @@ export class EnvironmentsService {
 
     // Apply changes: Zones
     await Promise.all([
-      ...addedZones.map((zone) =>
-        this.prisma.zone.create({ data: { ...zone, env_id: envId } }),
-      ),
-      ...updatedZones.map((zone) =>
-        this.prisma.zone.update({
-          where: { id: zone.id as number },
+      // Handle additions (filter out id if it's 0 or invalid)
+      ...addedZones.map((zone) => {
+        const { id, ...zoneData } = zone;
+        return this.prisma.zone.create({
+          data: {
+            ...zoneData,
+            env_id: envId,
+            // Include other required fields here
+          },
+        });
+      }),
+
+      // Handle updates (only for zones with valid IDs)
+      ...updatedZones.map((zone) => {
+        if (!zone.id) {
+          console.warn(
+            `Attempted to update zone without ID: ${JSON.stringify(zone)}`,
+          );
+          return Promise.resolve(null); // Skip invalid updates
+        }
+        return this.prisma.zone.update({
+          where: { id: zone.id },
           data: zone,
-        }),
-      ),
-      this.prisma.zone.deleteMany({ where: { id: { in: deletedZoneIds } } }),
+        });
+      }),
+
+      // Handle deletions
+      deletedZoneIds.length > 0
+        ? this.prisma.zone.deleteMany({
+            where: { id: { in: deletedZoneIds.filter((id) => id > 0) } },
+          })
+        : Promise.resolve(null), // Skip if no deletions
     ]);
 
     console.log('✅ Zones updated successfully.');
@@ -285,41 +310,54 @@ export class EnvironmentsService {
 
     const added: (CreateZoneDto | CreatePoiDto)[] = [];
     const updated: (CreateZoneDto | CreatePoiDto)[] = [];
-    const deletedIds: number[] = existingFeatures.map((f) => f.id!);
+
+    // Only consider features with valid IDs for deletion
+    const deletedIds: number[] = existingFeatures
+      .filter((f) => f.id !== undefined && f.id !== null && f.id !== 0)
+      .map((f) => f.id!);
 
     console.log('📌 Initial Deleted IDs:', deletedIds);
 
     for (const newFeature of newFeatures) {
+      // Treat features with no ID or ID=0 as new
+      if (!newFeature.id || newFeature.id === 0) {
+        console.log('➕ Adding new feature (no ID):', newFeature);
+        added.push(newFeature);
+        continue;
+      }
+
       const existing = existingFeatures.find((f) => f.id === newFeature.id);
 
       if (!existing) {
-        console.log('➕ Adding new feature:', newFeature);
-        added.push(newFeature);
-      } else if (JSON.stringify(existing) !== JSON.stringify(newFeature)) {
+        console.log(
+          '❓ Feature with ID not found in existing - should not happen:',
+          newFeature,
+        );
+        continue;
+      }
+
+      if (JSON.stringify(existing) !== JSON.stringify(newFeature)) {
         console.log('📝 Updating feature:', newFeature);
         updated.push(newFeature);
       }
 
-      if (newFeature.id) {
+      // Remove this ID from deletion list since it exists in new features
+      const index = deletedIds.indexOf(newFeature.id);
+      if (index > -1) {
         console.log(
           `✔️ Keeping ID ${newFeature.id}, removing from deleted list`,
         );
-        for (const newFeature of newFeatures) {
-          if (newFeature.id) {
-            const index = deletedIds.indexOf(newFeature.id);
-            if (index > -1) {
-              deletedIds.splice(index, 1);
-            }
-          }
-        }
+        deletedIds.splice(index, 1);
       }
     }
 
     console.log('📌 Final Deleted IDs:', deletedIds);
+    console.log(
+      `📊 Changes detected: ${added.length} added, ${updated.length} updated, ${deletedIds.length} to delete`,
+    );
 
     return { added, updated, deletedIds };
   }
-
   async getAll(filters: FiltersDto = {}, searchValue: string = '') {
     const environments = await this.prisma.environment.findMany({
       where: {

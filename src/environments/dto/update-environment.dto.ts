@@ -18,6 +18,7 @@ export class UpdateEnvironmentDto {
   }>;
   properties: {
     environment: {
+      description?: string;
       name?: string; // Optional environment name
       isPublic?: boolean; // Optional public/private flag
       userId?: number; // Optional userId
