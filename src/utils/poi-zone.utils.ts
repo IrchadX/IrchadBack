@@ -1,7 +1,7 @@
 import * as turf from '@turf/turf';
 import { PrismaService } from '../prisma/prisma.service';
-import { CreateZoneDto } from '../zones/dto/create-zone.dto';
-import { CreatePoiDto } from '../pois/dto/create-poi.dto';
+import { CreateZoneDto } from '../api/zones/dto/create-zone.dto';
+import { CreatePoiDto } from '../api/pois/dto/create-poi.dto';
 
 export class POIZoneUtils {
   constructor(private prisma: PrismaService) {}
