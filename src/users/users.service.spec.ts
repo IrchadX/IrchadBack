@@ -1,3 +1,4 @@
+/* eslint-disable prettier/prettier */
 /* eslint-disable @typescript-eslint/no-unsafe-return */
 /* eslint-disable @typescript-eslint/no-unsafe-member-access */
 /* eslint-disable @typescript-eslint/no-unsafe-call */
@@ -71,6 +72,7 @@ describe('UsersService', () => {
         first_name: createUserDto.firstName,
         family_name: createUserDto.familyName,
         email: createUserDto.email,
+        phone_number: createUserDto.phoneNumber,
       }),
     });
     expect(result).toEqual({
@@ -87,7 +89,7 @@ describe('UsersService', () => {
     });
   });
 
-  it('should fetch all users', async () => {
+  it('should fetch all users with optional search and filters', async () => {
     const users = [
       {
         id: 1,
@@ -95,6 +97,9 @@ describe('UsersService', () => {
         family_name: 'Dehili',
         email: 'Hind@example.com',
         birth_date: new Date('1994-05-20'),
+        sex: 'female',
+        city: 'Algiers',
+        userType: { type: 'admin' },
       },
       {
         id: 2,
@@ -102,11 +107,30 @@ describe('UsersService', () => {
         family_name: 'Dehili',
         email: 'Zineb@example.com',
         birth_date: new Date('2000-10-15'),
+        sex: 'female',
+        city: 'Oran',
+        userType: { type: 'user' },
       },
     ];
+
     mockPrismaService.user.findMany.mockResolvedValue(users);
-    const result = await service.findAll();
-    expect(mockPrismaService.user.findMany).toHaveBeenCalled();
+    const filters = { sex: 'female', city: 'Algiers', userType: 'admin' };
+    const search = 'Hind';
+    const result = await service.findAll(search, filters);
+
+    expect(mockPrismaService.user.findMany).toHaveBeenCalledWith({
+      where: {
+        OR: [
+          { family_name: { contains: search, mode: 'insensitive' } },
+          { first_name: { contains: search, mode: 'insensitive' } },
+        ],
+        sex: 'female',
+        city: 'Algiers',
+        userType: { type: 'admin' },
+      },
+      include: { userType: true },
+    });
+
     expect(result).toEqual(
       expect.arrayContaining(
         users.map((user) =>
@@ -115,7 +139,8 @@ describe('UsersService', () => {
             first_name: user.first_name,
             family_name: user.family_name,
             email: user.email,
-            birthDate: user.birth_date.toISOString().split('T')[0], // Ensure correct formatting
+            birthDate: user.birth_date.toISOString().split('T')[0],
+            userType: user.userType.type,
           }),
         ),
       ),
@@ -123,18 +148,17 @@ describe('UsersService', () => {
   });
 
   it('should update an existing user', async () => {
-    const updateUserDto = { firstName: 'Hindd', familyName:'Dehilii' };
+    const updateUserDto = { firstName: 'Hindd', email: 'Hind22@example.com' };
     const existingUser = {
       id: 1,
       first_name: 'Hind',
       family_name: 'Dehili',
       email: 'Hind@example.com',
-      birth_date: new Date('1994-05-20'),
     };
     const updatedUser = {
       ...existingUser,
       first_name: updateUserDto.firstName,
-      family_name: updateUserDto.familyName,
+      email: updateUserDto.email,
     };
 
     mockPrismaService.user.findUnique.mockResolvedValue(existingUser);
@@ -144,7 +168,7 @@ describe('UsersService', () => {
       where: { id: 1 },
       data: expect.objectContaining({
         first_name: updateUserDto.firstName,
-        family_name: updatedUser.family_name,
+        email: updatedUser.email,
       }),
     });
     expect(result.id).toEqual(updatedUser.id);
@@ -176,7 +200,6 @@ describe('UsersService', () => {
       first_name: 'Hind',
       family_name: 'Dehili',
       email: 'Hind@example.com',
-      birth_date: new Date('1994-05-20'),
     };
     mockPrismaService.user.findUnique.mockResolvedValue(user);
     const result = await service.findOne(1);
@@ -188,8 +211,5 @@ describe('UsersService', () => {
     expect(result.first_name).toEqual(user.first_name);
     expect(result.family_name).toEqual(user.family_name);
     expect(result.email).toEqual(user.email);
-    expect(result.birthDate).toEqual(
-      user.birth_date.toISOString().split('T')[0],
-    );
   });
 });

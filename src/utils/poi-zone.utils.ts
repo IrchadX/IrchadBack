@@ -15,67 +15,46 @@ export class POIZoneUtils {
       }
     }
   }
-
-  // tests if a poi is inside a zone
   private async isPOIInsideZone(poi: any, zone: any): Promise<boolean> {
     console.log(`Checking POI: ${poi.name} against Zone: ${zone.name}`);
     try {
-      const zonePolygon = turf.polygon([zone.coordinates[0]]);
-      let isInside = false;
+      const zonePolygon = turf.polygon(zone.coordinates);
 
-      if (poi.coordinates.length === 1 && poi.coordinates[0].length === 1) {
-        const poiPoint = turf.point(poi.coordinates[0][0]);
-        isInside = turf.booleanPointInPolygon(poiPoint, zonePolygon);
-      } else if (
-        poi.coordinates.length === 1 &&
-        poi.coordinates[0].length === 2
-      ) {
-        const line = turf.lineString(poi.coordinates[0]);
-        const linePoints = poi.coordinates[0].map((coord) => turf.point(coord));
-        isInside = linePoints.some((point) =>
+      // Handle different POI geometry types
+      if (poi.geometry.type === 'Point') {
+        const poiPoint = turf.point(poi.coordinates);
+        return turf.booleanPointInPolygon(poiPoint, zonePolygon);
+      } else if (poi.geometry.type === 'LineString') {
+        // For LineString, check if any point is inside the zone
+        const linePoints = poi.coordinates.map((coord) => turf.point(coord));
+        return linePoints.some((point) =>
           turf.booleanPointInPolygon(point, zonePolygon),
         );
-      } else {
-        const fixedPOI = this.fixPolygon(poi.coordinates);
-        const poiPolygon = turf.polygon([fixedPOI[0]]);
-        isInside = turf.booleanContains(zonePolygon, poiPolygon);
-      }
-      // insert entry in poi_zone table if the poi is inside the zone
-      if (isInside) {
-        console.log(`✅ POI "${poi.name}" is inside Zone "${zone.name}"`);
-
-        const existingEntry = await this.prisma.poi_zone.findFirst({
-          where: { poi_id: poi.id, zone_id: zone.id },
-        });
-
-        if (!existingEntry) {
-          await this.prisma.poi_zone.create({
-            data: { poi_id: poi.id, zone_id: zone.id },
-          });
-          console.log(
-            `✅ Inserted POI-Zone relation: ${poi.name} -> ${zone.name}`,
-          );
-        } else {
-          console.log(
-            `⚠️ POI-Zone relation already exists: ${poi.name} -> ${zone.name}`,
-          );
-        }
+      } else if (poi.geometry.type === 'Polygon') {
+        // Ensure polygon is closed
+        const closedCoords = this.ensureClosedPolygon(poi.coordinates);
+        const poiPolygon = turf.polygon(closedCoords);
+        return turf.booleanContains(zonePolygon, poiPolygon);
       }
 
-      return isInside;
+      return false;
     } catch (error) {
       console.error(`❌ Error processing POI "${poi.name}": ${error.message}`);
       return false;
     }
   }
 
-  // closes a polygon if it has only 4 coordinates
-  private fixPolygon(coordinates: number[][][]) {
-    const firstPoint = coordinates[0][0];
-    const lastPoint = coordinates[0][coordinates[0].length - 1];
+  private ensureClosedPolygon(coordinates: number[][][]): number[][][] {
+    const [ring] = coordinates;
+    if (ring.length < 4) {
+      throw new Error('Polygon must have at least 4 positions');
+    }
 
-    if (firstPoint[0] !== lastPoint[0] || firstPoint[1] !== lastPoint[1]) {
-      coordinates[0].push(firstPoint);
+    // Check if first and last points are the same
+    const first = ring[0];
+    const last = ring[ring.length - 1];
+    if (first[0] !== last[0] || first[1] !== last[1]) {
+      return [[...ring, first]]; // Close the ring
     }
     return coordinates;
   }
