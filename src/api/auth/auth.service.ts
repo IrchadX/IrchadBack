@@ -31,7 +31,6 @@ export class AuthService {
     }
 
     const isPasswordValid = loginDto.password === user.password;
-    console.log(user.userTypeId);
     // Compare passwords
     // const isPasswordValid = await bcrypt.compare(
     //   loginDto.password,
@@ -41,12 +40,16 @@ export class AuthService {
     if (!isPasswordValid) {
       throw new UnauthorizedException('Invalid credentials');
     }
-    const userTypeName =
+    // Since Prisma operations are async, you should use await
+    const userType =
       user?.userTypeId != null
-        ? this.prisma.user_type.findUnique({
+        ? await this.prisma.user_type.findUnique({
             where: { id: user.userTypeId },
           })
         : undefined;
+
+    const userTypeName = userType?.type;
+    console.log(userTypeName);
 
     // Generate JWT token
     const payload = {
