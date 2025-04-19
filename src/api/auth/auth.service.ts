@@ -21,7 +21,7 @@ export class AuthService {
         email: loginDto.email,
       },
       include: {
-        userType: true,
+        user_type: true,
       },
     });
 
@@ -40,12 +40,22 @@ export class AuthService {
     if (!isPasswordValid) {
       throw new UnauthorizedException('Invalid credentials');
     }
+    // Since Prisma operations are async, you should use await
+    const userType =
+      user?.userTypeId != null
+        ? await this.prisma.user_type.findUnique({
+            where: { id: user.userTypeId },
+          })
+        : undefined;
+
+    const userTypeName = userType?.type;
+    console.log(userTypeName);
 
     // Generate JWT token
     const payload = {
       sub: user.id,
       email: user.email,
-      role: user.userType?.type,
+      role: userTypeName,
     };
 
     return {
@@ -56,7 +66,7 @@ export class AuthService {
         familyName: user.family_name,
         email: user.email,
         phoneNumber: user.phone_number,
-        role: user.userType?.type,
+        role: userTypeName,
       },
     };
   }

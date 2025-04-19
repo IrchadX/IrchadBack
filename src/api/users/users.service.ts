@@ -159,12 +159,12 @@ export class UsersService {
       // Fetch users with filters
       const users = await this.prisma.user.findMany({
         where: whereClause,
-        include: { userType: true },
+        include: { user_type: true },
       });
 
-      return users.map(({ password, birth_date, userType, ...user }) => ({
+      return users.map(({ password, birth_date, userTypeId, ...user }) => ({
         ...user,
-        userType: userType ? userType.type : 'N/A',
+        userType: userTypeId ? userTypeId : 'N/A',
         birthDate: birth_date ? birth_date.toISOString().split('T')[0] : null,
       }));
     } catch (error) {
@@ -236,7 +236,7 @@ export class UsersService {
       const user = await this.prisma.user.findUnique({
         where: { id },
         include: {
-          userType: true, // This acts like a JOIN to get the user type name
+          user_type: true, // This acts like a JOIN to get the user type name
         },
       });
 
@@ -245,11 +245,16 @@ export class UsersService {
       }
 
       // Destructure and format response
-      const { password, birth_date, userType, ...result } = user;
+      const { password, birth_date, userTypeId, ...result } = user;
+      const userTypeName =
+        userTypeId &&
+        this.prisma.user_type.findUnique({
+          where: { id: userTypeId },
+        });
 
       return {
         ...result,
-        userTypeName: userType?.type ?? null, // Get the actual name from the user_type table
+        userTypeName: userTypeName,
         birthDate: birth_date ? birth_date.toISOString().split('T')[0] : null, // Convert birth_date to YYYY-MM-DD
       };
     } catch (error) {
