@@ -4,14 +4,21 @@ import * as express from 'express';
 import { join } from 'path';
 import { ValidationPipe } from '@nestjs/common';
 
-
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
-
-  app.enableCors(); // Autoriser les requêtes depuis un autre domaine
-
-  app.use('/uploads', express.static(join(__dirname, '../uploads'))); // Servir les fichiers statiques
+  app.use('/uploads', express.static(join(__dirname, '../uploads')));
   app.useGlobalPipes(new ValidationPipe({ whitelist: true, transform: true }));
+
+  // Enable CORS
+  app.enableCors({
+    origin: ['http://localhost:3001', 'http://localhost:3000'],
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
+    credentials: true,
+    allowedHeaders: ['Content-Type', 'Authorization'],
+  });
+
+  // Global validation pipe for all endpoints
+  app.useGlobalPipes(new ValidationPipe());
 
   await app.listen(3001); // Port du back-end
 }
