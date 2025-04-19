@@ -4,7 +4,7 @@
 // src/auth/auth.service.ts
 import { Injectable, UnauthorizedException } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
-import { PrismaService } from '../prisma/prisma.service';
+import { PrismaService } from '@/prisma/prisma.service';
 import { LoginDto } from './dto/login.dto';
 import * as bcrypt from 'bcrypt';
 
@@ -25,7 +25,7 @@ export class AuthService {
       },
     });
 
-    // If user doesn't exist or password doesn't match
+    console.log(user);
     if (!user || !user.password) {
       throw new UnauthorizedException('Invalid credentials');
     }
@@ -44,7 +44,7 @@ export class AuthService {
     const payload = {
       sub: user.id,
       email: user.email,
-      userType: user.userType?.type,
+      role: user.userType?.type,
     };
 
     return {
@@ -55,7 +55,7 @@ export class AuthService {
         familyName: user.family_name,
         email: user.email,
         phoneNumber: user.phone_number,
-        userType: user.userType?.type,
+        role: user.userType?.type,
       },
     };
   }

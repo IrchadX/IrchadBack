@@ -8,10 +8,9 @@ import { LoginDto } from './dto/login.dto';
 export class AuthController {
   constructor(private authService: AuthService) {}
 
-  @Post('')
-  // eslint-disable-next-line @typescript-eslint/require-await
+  @Post('login')
   async login(@Body() loginDto: LoginDto) {
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-call
+    console.log(loginDto);
     return this.authService.login(loginDto);
   }
 }
