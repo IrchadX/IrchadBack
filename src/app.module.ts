@@ -1,18 +1,23 @@
 // src/app.module.ts
 import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
-import { AuthModule } from './auth/auth.module';
+import { AuthModule } from './api/auth/auth.module';
 import { PrismaModule } from './prisma/prisma.module';
-import { UsersModule } from './users/users.module';
+import { UsersModule } from './api/users/users.module';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
-import { DevicesModule } from './devices/devices.module';
-import { SalesModule } from './sales/sales.module';
-import { OffersModule } from './offers/offers.module';
-import { EnvironmentsModule } from './environments/environments.module';
-import { ZonesModule } from './zones/zones.module';
-import { PoisModule } from './pois/pois.module';
+import { EnvironmentsModule } from './api/environments/environments.module';
+import { ZonesModule } from './api/zones/zones.module';
+import { PoisModule } from './api/pois/pois.module';
+import { DevicesModule } from './api/devices/devices.module';
+import { SalesModule } from './api/sales/sales.module';
+import { OffersModule } from './api/offers/offers.module';
 import { PrismaService } from './prisma/prisma.service';
+import { ReportsModule } from './api/reports/reports.module';
+import { StatisticsModule } from './api/statistics/statistics.module';
+import { GraphicsModule } from './api/graphics/graphics.module';
+import { GraphicsController } from './api/graphics/graphics.controller';
+import { GraphicsService } from './api/graphics/graphics.service';
 
 @Module({
   imports: [
@@ -28,8 +33,11 @@ import { PrismaService } from './prisma/prisma.service';
     EnvironmentsModule,
     ZonesModule,
     PoisModule,
+    ReportsModule,
+    StatisticsModule,
+    GraphicsModule,
   ],
-  controllers: [AppController],
-  providers: [AppService, PrismaService],
+  controllers: [AppController, GraphicsController],
+  providers: [AppService, PrismaService, GraphicsService],
 })
 export class AppModule {}
