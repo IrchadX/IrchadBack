@@ -21,7 +21,6 @@ import { GraphicsService } from './graphics/graphics.service';
   imports: [
     ConfigModule.forRoot({
       isGlobal: true,
-      isGlobal: true,
     }),
     PrismaModule,
     UsersModule,
