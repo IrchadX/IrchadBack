@@ -1,10 +1,10 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
-import { PrismaService } from '../prisma/prisma.service';
+import { PrismaService } from '../../prisma/prisma.service';
 import { CreateEnvironmentDto } from './dto/create-environment.dto';
 import { UpdateEnvironmentDto } from './dto/update-environment.dto';
 import { CreateZoneDto } from '../zones/dto/create-zone.dto';
 import { CreatePoiDto } from '../pois/dto/create-poi.dto';
-import { POIZoneUtils } from '../utils/poi-zone.utils';
+import { POIZoneUtils } from '../../utils/poi-zone.utils';
 import { FiltersDto } from './dto/filter.dto';
 
 @Injectable()
