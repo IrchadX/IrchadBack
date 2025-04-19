@@ -25,16 +25,17 @@ export class AuthService {
       },
     });
 
-    console.log(user);
+    console.log(loginDto);
     if (!user || !user.password) {
       throw new UnauthorizedException('Invalid credentials');
     }
 
+    const isPasswordValid = loginDto.password === user.password;
     // Compare passwords
-    const isPasswordValid = await bcrypt.compare(
-      loginDto.password,
-      user.password,
-    );
+    // const isPasswordValid = await bcrypt.compare(
+    //   loginDto.password,
+    //   user.password,
+    // );
 
     if (!isPasswordValid) {
       throw new UnauthorizedException('Invalid credentials');
