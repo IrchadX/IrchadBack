@@ -6,10 +6,12 @@ import { PrismaModule } from './prisma/prisma.module';
 import { UsersModule } from './api/users/users.module';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
-import { DevicesModule } from './api/devices/devices.module';
 import { EnvironmentsModule } from './api/environments/environments.module';
 import { ZonesModule } from './api/zones/zones.module';
 import { PoisModule } from './api/pois/pois.module';
+import { DevicesModule } from './api/devices/devices.module';
+import { SalesModule } from './api/sales/sales.module';
+import { OffersModule } from './api/offers/offers.module';
 import { PrismaService } from './prisma/prisma.service';
 import { ReportsModule } from './api/reports/reports.module';
 import { StatisticsModule } from './api/statistics/statistics.module';
@@ -26,6 +28,8 @@ import { GraphicsService } from './api/graphics/graphics.service';
     UsersModule,
     AuthModule,
     DevicesModule,
+    SalesModule,
+    OffersModule,
     EnvironmentsModule,
     ZonesModule,
     PoisModule,

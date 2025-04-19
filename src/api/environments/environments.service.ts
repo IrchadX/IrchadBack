@@ -396,7 +396,7 @@ export class EnvironmentsService {
       where: { id: envId },
       include: {
         zone: true,
-        pois: true,
+        poi: true,
       },
     });
 

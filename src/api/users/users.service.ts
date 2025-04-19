@@ -140,18 +140,19 @@ export class UsersService {
 
       // Filter by user type
       if (filters?.userType) {
-        const userTypes = await this.prisma.user_type.findMany();
-        console.log(`All user types: ${JSON.stringify(userTypes)}`);
-
-        // Fetch the userTypeId for the given type
-        const userType = await this.prisma.user_type.findFirst({
-          where: { type: filters.userType },
+        // Fetch all userTypeIds for the given types
+        const userTypes = await this.prisma.user_type.findMany({
+          where: {
+            type: { in: filters.userType },
+          },
         });
 
-        if (userType) {
-          whereClause.userTypeId = userType.id; // Filter by userTypeId
+        const userTypeIds = userTypes.map((userType) => userType.id);
+
+        if (userTypeIds.length > 0) {
+          whereClause.userTypeId = { in: userTypeIds }; // Filter by userTypeId
         } else {
-          return [];
+          return []; // No matching user types found
         }
       }
 
