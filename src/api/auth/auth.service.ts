@@ -21,7 +21,7 @@ export class AuthService {
         email: loginDto.email,
       },
       include: {
-        userType: true,
+        user_type: true,
       },
     });
 
@@ -31,6 +31,7 @@ export class AuthService {
     }
 
     const isPasswordValid = loginDto.password === user.password;
+    console.log(user.userTypeId);
     // Compare passwords
     // const isPasswordValid = await bcrypt.compare(
     //   loginDto.password,
@@ -40,12 +41,18 @@ export class AuthService {
     if (!isPasswordValid) {
       throw new UnauthorizedException('Invalid credentials');
     }
+    const userTypeName =
+      user?.userTypeId != null
+        ? this.prisma.user_type.findUnique({
+            where: { id: user.userTypeId },
+          })
+        : undefined;
 
     // Generate JWT token
     const payload = {
       sub: user.id,
       email: user.email,
-      role: user.userType?.type,
+      role: userTypeName,
     };
 
     return {
@@ -56,7 +63,7 @@ export class AuthService {
         familyName: user.family_name,
         email: user.email,
         phoneNumber: user.phone_number,
-        role: user.userType?.type,
+        role: userTypeName,
       },
     };
   }

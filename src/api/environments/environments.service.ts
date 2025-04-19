@@ -407,7 +407,7 @@ export class EnvironmentsService {
     return {
       environment,
       zones: environment.zone,
-      pois: environment.pois,
+      pois: environment.poi,
     };
   }
 
