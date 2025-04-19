@@ -55,7 +55,6 @@ export class UsersService {
     }
   }
 
-  // User Creation endpoint
   async create(createUserDto: CreateUserDto) {
     try {
       const hashedPassword = await bcrypt.hash(createUserDto.password, 10);
@@ -75,9 +74,7 @@ export class UsersService {
           street: createUserDto.street ?? null,
         },
       });
-
       const { password, birth_date, ...result } = user;
-
       return {
         ...result,
         id: Number(result.id),
@@ -92,7 +89,6 @@ export class UsersService {
     }
   }
 
-  // User Fetching endpoint
   async findAll(search?: string, filters?: any) {
     try {
       const whereClause: any = {};
@@ -176,7 +172,6 @@ export class UsersService {
     }
   }
 
-  // User update endpoint
   async update(id: number, updateUserDto: UpdateUserDto) {
     try {
       const existingUser = await this.prisma.user.findUnique({ where: { id } });
@@ -216,7 +211,6 @@ export class UsersService {
     }
   }
 
-  // User deletion endpoint
   async remove(id: number) {
     try {
       const user = await this.prisma.user.findUnique({ where: { id } });
@@ -236,7 +230,6 @@ export class UsersService {
     }
   }
 
-  // User by ID fetching endpoint
   async findOne(id: number) {
     try {
       const user = await this.prisma.user.findUnique({

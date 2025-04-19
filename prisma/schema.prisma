@@ -37,6 +37,354 @@ model user_type {
   user       user[]
 }
 
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model device_type {
+  id     Int      @id @default(autoincrement())
+  type   String   @unique @db.VarChar(100)
+  device device[]
+}
+
+model device {
+  id               Int                @id @default(autoincrement())
+  type_id          Int
+  state_type_id    Int
+  user_id          Int?
+  mac_address      String             @db.VarChar
+  software_version String             @db.VarChar
+  date_of_service  DateTime           @db.Date
+  comm_state       Boolean
+  connection_state Boolean?           @default(true)
+  device_type      device_type        @relation(fields: [type_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  user             user?              @relation(fields: [user_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  purchase_history purchase_history[]
+}
+
+model state_type {
+  id    Int    @id @default(autoincrement())
+  state String @unique @db.VarChar(50)
+}
+
+model alert {
+  id        Int      @id @default(autoincrement())
+  type      String
+  time      DateTime @db.Time(6)
+  date      DateTime @db.Date
+  zone      String
+  status    String
+  device_id Int
+  level     String
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model env_delimiter {
+  id          Int       @id @default(autoincrement())
+  created_at  DateTime  @default(now()) @db.Timestamptz(6)
+  updated_at  DateTime? @db.Timestamp(6)
+  env_id      Int?
+  coordinates Json?     @db.Json
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model env_user {
+  id          Int          @id @default(autoincrement())
+  user_id     Int
+  env_id      Int?
+  environment environment? @relation(fields: [env_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  user        user         @relation(fields: [user_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model environment {
+  id          Int        @id @default(autoincrement())
+  name        String     @db.VarChar
+  description String?    @db.VarChar
+  user_id     Int?
+  address     String?    @db.VarChar
+  created_at  DateTime?  @default(now()) @db.Timestamptz(6)
+  updated_at  DateTime?  @db.Timestamp(6)
+  map_id      Int?
+  env_user    env_user[]
+  map         map?       @relation(fields: [map_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  user        user?      @relation(fields: [user_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  poi         poi[]
+  zone        zone[]
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model format {
+  id     Int    @id @default(autoincrement())
+  format String @db.VarChar
+  map    map[]
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+model intervention_history {
+  id               Int       @id @default(autoincrement())
+  device_id        Int?
+  maintenancier_id Int?
+  scheduled_date   DateTime  @db.Timestamp(6)
+  completion_date  DateTime? @db.Timestamp(6)
+  description      String?
+  type             String?
+  status           String?
+  user             user?     @relation(fields: [maintenancier_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model poi {
+  id           Int           @id @default(autoincrement())
+  created_at   DateTime      @default(now()) @db.Timestamptz(6)
+  env_id       Int?
+  category_id  Int?
+  name         String?       @db.VarChar
+  description  String?       @db.VarChar
+  coordinates  Json?         @db.Json
+  image_url    String?       @db.VarChar
+  map_id       Int?
+  poi_category poi_category? @relation(fields: [category_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  environment  environment?  @relation(fields: [env_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  map          map?          @relation(fields: [map_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  poi_zone     poi_zone[]
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model poi_category {
+  id       Int    @id @default(autoincrement())
+  category String @db.VarChar
+  poi      poi[]
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model poi_zone {
+  id         Int      @id @default(autoincrement())
+  created_at DateTime @default(now()) @db.Timestamptz(6)
+  poi_id     Int?
+  zone_id    Int?
+  poi        poi?     @relation(fields: [poi_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  zone       zone?    @relation(fields: [zone_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model zone {
+  id          Int          @id @default(autoincrement())
+  created_at  DateTime     @default(now()) @db.Timestamptz(6)
+  env_id      Int?
+  name        String?      @db.VarChar
+  description String?      @db.VarChar
+  type_id     Int?
+  coordinates Json?        @db.Json
+  updated_at  DateTime?    @db.Timestamp(6)
+  map_id      Int?
+  poi_zone    poi_zone[]
+  environment environment? @relation(fields: [env_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  map         map?         @relation(fields: [map_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+}
+
+model helper_user {
+  id                               Int   @id @default(autoincrement())
+  user_id                          Int?
+  helper_id                        Int?
+  user_helper_user_helper_idTouser user? @relation("helper_user_helper_idTouser", fields: [helper_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  user_helper_user_user_idTouser   user? @relation("helper_user_user_idTouser", fields: [user_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model map {
+  id          Int           @id @default(autoincrement())
+  created_at  DateTime      @default(now()) @db.Timestamptz(6)
+  format_id   Int?
+  environment environment[]
+  format      format?       @relation(fields: [format_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  poi         poi[]
+  zone        zone[]
+}
+
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model purchase_history {
+  id        Int      @id @default(autoincrement())
+  date      DateTime @default(now()) @db.Timestamptz(6)
+  user_id   Int?
+  device_id Int?
+  device    device?  @relation(fields: [device_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  user      user?    @relation(fields: [user_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+}
+
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model device_type {
+  id     Int      @id @default(autoincrement())
+  type   String   @unique @db.VarChar(100)
+  device device[]
+}
+
+model device {
+  id               Int                @id @default(autoincrement())
+  type_id          Int
+  state_type_id    Int
+  user_id          Int?
+  mac_address      String             @db.VarChar
+  software_version String             @db.VarChar
+  date_of_service  DateTime           @db.Date
+  comm_state       Boolean
+  connection_state Boolean?           @default(true)
+  device_type      device_type        @relation(fields: [type_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  user             user?              @relation(fields: [user_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  purchase_history purchase_history[]
+}
+
+model state_type {
+  id    Int    @id @default(autoincrement())
+  state String @unique @db.VarChar(50)
+}
+
+model alert {
+  id        Int      @id @default(autoincrement())
+  type      String
+  time      DateTime @db.Time(6)
+  date      DateTime @db.Date
+  zone      String
+  status    String
+  device_id Int
+  level     String
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model env_delimiter {
+  id          Int       @id @default(autoincrement())
+  created_at  DateTime  @default(now()) @db.Timestamptz(6)
+  updated_at  DateTime? @db.Timestamp(6)
+  env_id      Int?
+  coordinates Json?     @db.Json
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model env_user {
+  id          Int          @id @default(autoincrement())
+  user_id     Int
+  env_id      Int?
+  environment environment? @relation(fields: [env_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  user        user         @relation(fields: [user_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model environment {
+  id          Int        @id @default(autoincrement())
+  name        String     @db.VarChar
+  description String?    @db.VarChar
+  user_id     Int?
+  address     String?    @db.VarChar
+  created_at  DateTime?  @default(now()) @db.Timestamptz(6)
+  updated_at  DateTime?  @db.Timestamp(6)
+  map_id      Int?
+  env_user    env_user[]
+  map         map?       @relation(fields: [map_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  user        user?      @relation(fields: [user_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  poi         poi[]
+  zone        zone[]
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model format {
+  id     Int    @id @default(autoincrement())
+  format String @db.VarChar
+  map    map[]
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+model intervention_history {
+  id               Int       @id @default(autoincrement())
+  device_id        Int?
+  maintenancier_id Int?
+  scheduled_date   DateTime  @db.Timestamp(6)
+  completion_date  DateTime? @db.Timestamp(6)
+  description      String?
+  type             String?
+  status           String?
+  user             user?     @relation(fields: [maintenancier_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model poi {
+  id           Int           @id @default(autoincrement())
+  created_at   DateTime      @default(now()) @db.Timestamptz(6)
+  env_id       Int?
+  category_id  Int?
+  name         String?       @db.VarChar
+  description  String?       @db.VarChar
+  coordinates  Json?         @db.Json
+  image_url    String?       @db.VarChar
+  map_id       Int?
+  poi_category poi_category? @relation(fields: [category_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  environment  environment?  @relation(fields: [env_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  map          map?          @relation(fields: [map_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  poi_zone     poi_zone[]
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model poi_category {
+  id       Int    @id @default(autoincrement())
+  category String @db.VarChar
+  poi      poi[]
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model poi_zone {
+  id         Int      @id @default(autoincrement())
+  created_at DateTime @default(now()) @db.Timestamptz(6)
+  poi_id     Int?
+  zone_id    Int?
+  poi        poi?     @relation(fields: [poi_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  zone       zone?    @relation(fields: [zone_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model zone {
+  id          Int          @id @default(autoincrement())
+  created_at  DateTime     @default(now()) @db.Timestamptz(6)
+  env_id      Int?
+  name        String?      @db.VarChar
+  description String?      @db.VarChar
+  type_id     Int?
+  coordinates Json?        @db.Json
+  updated_at  DateTime?    @db.Timestamp(6)
+  map_id      Int?
+  poi_zone    poi_zone[]
+  environment environment? @relation(fields: [env_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  map         map?         @relation(fields: [map_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+}
+
+model helper_user {
+  id                               Int   @id @default(autoincrement())
+  user_id                          Int?
+  helper_id                        Int?
+  user_helper_user_helper_idTouser user? @relation("helper_user_helper_idTouser", fields: [helper_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  user_helper_user_user_idTouser   user? @relation("helper_user_user_idTouser", fields: [user_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model map {
+  id          Int           @id @default(autoincrement())
+  created_at  DateTime      @default(now()) @db.Timestamptz(6)
+  format_id   Int?
+  environment environment[]
+  format      format?       @relation(fields: [format_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  poi         poi[]
+  zone        zone[]
+}
+
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model purchase_history {
+  id        Int      @id @default(autoincrement())
+  date      DateTime @default(now()) @db.Timestamptz(6)
+  user_id   Int?
+  device_id Int?
+  device    device?  @relation(fields: [device_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  user      user?    @relation(fields: [user_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+}
+
 model environment {
   id          Int        @id @default(autoincrement())
   name        String     @db.VarChar

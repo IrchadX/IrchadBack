@@ -1,25 +1,146 @@
-import { Controller, Get, Param, Post } from '@nestjs/common';
+/* eslint-disable prettier/prettier */
+/* eslint-disable @typescript-eslint/no-unsafe-argument */
+import {
+  Body,
+  Delete,
+  Patch,
+  UsePipes,
+  ValidationPipe,
+  HttpException,
+  HttpStatus,
+  NotFoundException,
+  Get,
+  Post,
+  Controller,
+  Param,
+} from '@nestjs/common';
+import { CreateDeviceDto } from './dto/CreateDevice.dto';
+import { UpdateDeviceDto } from './dto/UpdateDevice.dto';
+import { DeviceService } from './device.service';
+import { ConnectableObservable } from 'rxjs';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
 import { Roles } from '../auth/decorators/roles.decorator';
 import { UseGuards } from '@nestjs/common';
 
 @UseGuards(JwtAuthGuard, RolesGuard)
-@Roles('admin', 'super_admin')
+@Roles('commercial', 'admin', 'super_admin')
 @Controller('devices')
 export class DevicesController {
+  constructor(private service: DeviceService) {}
+
   @Get()
-  AllDevices() {
-    return 'All devices';
+  async getAllDevices() {
+    try {
+      return await this.service.getDevices();
+    } catch (error) {
+      console.error('Error fetching devices:', error);
+      throw new HttpException(
+        'Failed to fetch devices',
+        HttpStatus.INTERNAL_SERVER_ERROR,
+      );
+    }
   }
 
   @Post()
-  addDevice() {
-    return 'Create a device';
+  @UsePipes(new ValidationPipe({ forbidNonWhitelisted: true }))
+  async createDevice(@Body() body: CreateDeviceDto) {
+    try {
+      return await this.service.createDevice(body);
+    } catch (error) {
+      throw new HttpException(
+        'Failed to create device',
+        HttpStatus.BAD_REQUEST,
+      );
+    }
   }
 
   @Get(':id')
-  getDevice(@Param('id') id: string) {
-    return `This is device ${id}`;
+  async getDeviceById(@Param('id') id: string) {
+    try {
+      const device = await this.service.getDeviceById(Number(id));
+      if (!device) {
+        throw new NotFoundException(`Device with ID ${id} not found`);
+      }
+      return device;
+    } catch (error) {
+      if (error instanceof NotFoundException) {
+        throw error;
+      }
+      throw new HttpException(
+        'Failed to fetch device',
+        HttpStatus.INTERNAL_SERVER_ERROR,
+      );
+    }
+  }
+
+  @Patch(':id')
+  async updateDevice(
+    @Param('id') id: string,
+    @Body(new ValidationPipe({ forbidNonWhitelisted: true }))
+    body: UpdateDeviceDto,
+  ) {
+    try {
+      const deviceExists = await this.service.getDeviceById(Number(id));
+      if (!deviceExists) {
+        throw new NotFoundException(`Device with ID ${id} not found`);
+      }
+      return await this.service.updateDevice(Number(id), body);
+    } catch (error) {
+      if (error instanceof NotFoundException) {
+        throw error;
+      }
+      console.log(error);
+      throw new HttpException(
+        'Failed to update device',
+        HttpStatus.INTERNAL_SERVER_ERROR,
+      );
+    }
+  }
+
+  @Delete(':id')
+  async deleteDevice(@Param('id') id: string) {
+    try {
+      const deviceExists = await this.service.getDeviceById(Number(id));
+      if (!deviceExists) {
+        throw new NotFoundException(`Device with ID ${id} not found`);
+      }
+      return await this.service.deleteDvice(Number(id));
+    } catch (error) {
+      if (error instanceof NotFoundException) {
+        throw error;
+      }
+      console.log(error);
+      throw new HttpException(
+        'Failed to delete device',
+        HttpStatus.INTERNAL_SERVER_ERROR,
+      );
+    }
+  }
+
+  @Get('user/:id')
+  async getDevicesByUserId(@Param('id') id: string) {
+    try {
+      const devices = await this.service.getDeviceByUserId(Number(id));
+      return devices;
+    } catch (error) {
+      throw new HttpException(
+        'Failed to fetch devices by user ID',
+        HttpStatus.INTERNAL_SERVER_ERROR,
+      );
+    }
+  }
+
+  @Get('type/:id')
+  async getDevicesByTypeId(@Param('id') id: string) {
+    try {
+      const devices = await this.service.getDeviceByTypeId(Number(id));
+      return devices;
+    } catch (error) {
+      throw new HttpException(
+        'Failed to fetch devices by type ID',
+        HttpStatus.INTERNAL_SERVER_ERROR,
+      );
+    }
   }
 }
