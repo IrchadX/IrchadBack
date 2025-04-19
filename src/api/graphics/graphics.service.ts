@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { PrismaService } from '../prisma/prisma.service';
+import { PrismaService } from '../../prisma/prisma.service';
 
 @Injectable()
 export class GraphicsService {
@@ -45,22 +45,34 @@ export class GraphicsService {
   }
   async getGlobalSalesByMonth(): Promise<any[]> {
     const currentYear = new Date().getFullYear();
-  
+
     const sales = await this.prisma.purchase_history.findMany({
       where: {
         date: {
           gte: new Date(`${currentYear}-01-01`),
-          lt: new Date(`${currentYear + 1}-01-01`)
-        }
+          lt: new Date(`${currentYear + 1}-01-01`),
+        },
       },
-      select: { date: true }
+      select: { date: true },
     });
-  
-    const monthLabels = ["Jan", "Fev", "Mar", "Avr", "Mai", "Jun",
-                         "Jul", "Aou", "Sep", "Oct", "Nov", "Dec"];
-  
+
+    const monthLabels = [
+      'Jan',
+      'Fev',
+      'Mar',
+      'Avr',
+      'Mai',
+      'Jun',
+      'Jul',
+      'Aou',
+      'Sep',
+      'Oct',
+      'Nov',
+      'Dec',
+    ];
+
     const salesByMonth: Record<string, number> = {};
-  
+
     sales.forEach(({ date }) => {
       if (date) {
         const d = new Date(date);
@@ -68,12 +80,10 @@ export class GraphicsService {
         salesByMonth[month] = (salesByMonth[month] || 0) + 1;
       }
     });
-  
-    return monthLabels.map(month => ({
+
+    return monthLabels.map((month) => ({
       month,
       sales: salesByMonth[month] || 0,
     }));
   }
-  
-  
 }

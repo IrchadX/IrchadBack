@@ -11,11 +11,11 @@ import { EnvironmentsModule } from './api/environments/environments.module';
 import { ZonesModule } from './api/zones/zones.module';
 import { PoisModule } from './api/pois/pois.module';
 import { PrismaService } from './prisma/prisma.service';
-import { ReportsModule } from './reports/reports.module';
-import { StatisticsModule } from './statistics/statistics.module';
-import { GraphicsModule } from './graphics/graphics.module';
-import { GraphicsController } from './graphics/graphics.controller';
-import { GraphicsService } from './graphics/graphics.service';
+import { ReportsModule } from './api/reports/reports.module';
+import { StatisticsModule } from './api/statistics/statistics.module';
+import { GraphicsModule } from './api/graphics/graphics.module';
+import { GraphicsController } from './api/graphics/graphics.controller';
+import { GraphicsService } from './api/graphics/graphics.service';
 
 @Module({
   imports: [

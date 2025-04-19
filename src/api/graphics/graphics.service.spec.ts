@@ -1,6 +1,6 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { GraphicsService } from './graphics.service';
-import { PrismaService } from '../prisma/prisma.service';
+import { PrismaService } from '../../prisma/prisma.service';
 
 describe('GraphicsService', () => {
   let service: GraphicsService;
@@ -51,7 +51,9 @@ describe('GraphicsService', () => {
         },
       ];
 
-      (prisma.panne_history.findMany as jest.Mock).mockResolvedValue(mockPannes);
+      (prisma.panne_history.findMany as jest.Mock).mockResolvedValue(
+        mockPannes,
+      );
 
       const result = await service.getPannesByDeviceType();
 
@@ -70,18 +72,19 @@ describe('GraphicsService', () => {
         { date: new Date(`${new Date().getFullYear()}-03-10`) },
       ];
 
-      (prisma.purchase_history.findMany as jest.Mock).mockResolvedValue(mockSales);
+      (prisma.purchase_history.findMany as jest.Mock).mockResolvedValue(
+        mockSales,
+      );
 
       const result = await service.getGlobalSalesByMonth();
 
-    
       expect(result).toEqual(
         expect.arrayContaining([
           { month: 'Jan', sales: 2 },
           { month: 'Mar', sales: 1 },
-          { month: 'Fev', sales: 0 }, 
-        ])
+          { month: 'Fev', sales: 0 },
+        ]),
       );
-                });
+    });
   });
 });

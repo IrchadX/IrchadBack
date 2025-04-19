@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { PrismaService } from '../prisma/prisma.service';
+import { PrismaService } from '../../prisma/prisma.service';
 import { alert } from '@prisma/client';
 
 @Injectable()
@@ -11,7 +11,11 @@ export class StatisticsService {
   }
 
   async getAlertsCount(): Promise<number> {
-    const firstDayOfMonth = new Date(new Date().getFullYear(), new Date().getMonth(), 1);
+    const firstDayOfMonth = new Date(
+      new Date().getFullYear(),
+      new Date().getMonth(),
+      1,
+    );
     const lastDayOfMonth = new Date();
 
     return this.prisma.alert.count({
@@ -25,12 +29,16 @@ export class StatisticsService {
   }
 
   async getDeviceCount(): Promise<number> {
-    const firstDayOfMonth = new Date(new Date().getFullYear(), new Date().getMonth(), 1);
+    const firstDayOfMonth = new Date(
+      new Date().getFullYear(),
+      new Date().getMonth(),
+      1,
+    );
     const lastDayOfMonth = new Date();
 
     return this.prisma.device.count({
       where: {
-        date_of_service: {  
+        date_of_service: {
           gte: firstDayOfMonth,
           lte: lastDayOfMonth,
         },
@@ -59,7 +67,7 @@ export class StatisticsService {
   async getAllAlerts(): Promise<alert[]> {
     return this.prisma.alert.findMany();
   }
-  
+
   async getTechnicalInterventionPercentage(): Promise<number> {
     const total = await this.prisma.intervention_history.count();
     const techniques = await this.prisma.intervention_history.count({
@@ -67,9 +75,8 @@ export class StatisticsService {
         type: 'technique',
       },
     });
-  
+
     if (total === 0) return 0;
     return (techniques / total) * 100;
   }
-  
 }
