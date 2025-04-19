@@ -11,6 +11,11 @@ import { EnvironmentsModule } from './api/environments/environments.module';
 import { ZonesModule } from './api/zones/zones.module';
 import { PoisModule } from './api/pois/pois.module';
 import { PrismaService } from './prisma/prisma.service';
+import { ReportsModule } from './reports/reports.module';
+import { StatisticsModule } from './statistics/statistics.module';
+import { GraphicsModule } from './graphics/graphics.module';
+import { GraphicsController } from './graphics/graphics.controller';
+import { GraphicsService } from './graphics/graphics.service';
 
 @Module({
   imports: [
@@ -24,8 +29,11 @@ import { PrismaService } from './prisma/prisma.service';
     EnvironmentsModule,
     ZonesModule,
     PoisModule,
+    ReportsModule,
+    StatisticsModule,
+    GraphicsModule,
   ],
-  controllers: [AppController],
-  providers: [AppService, PrismaService],
+  controllers: [AppController, GraphicsController],
+  providers: [AppService, PrismaService, GraphicsService],
 })
 export class AppModule {}
