@@ -1,12 +1,9 @@
-/* eslint-disable @typescript-eslint/no-unsafe-member-access */
-/* eslint-disable @typescript-eslint/no-unsafe-call */
-/* eslint-disable @typescript-eslint/no-unsafe-assignment */
-// src/auth/auth.service.ts
 import { Injectable, UnauthorizedException } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { PrismaService } from '@/prisma/prisma.service';
 import { LoginDto } from './dto/login.dto';
 import * as bcrypt from 'bcrypt';
+import { Response } from 'express';
 
 @Injectable()
 export class AuthService {
@@ -15,51 +12,42 @@ export class AuthService {
     private jwtService: JwtService,
   ) {}
 
-  async login(loginDto: LoginDto) {
+  async login(loginDto: LoginDto, res: any) {
     const user = await this.prisma.user.findUnique({
-      where: {
-        email: loginDto.email,
-      },
-      include: {
-        user_type: true,
-      },
+      where: { email: loginDto.email },
+      include: { user_type: true },
     });
 
-    console.log(loginDto);
     if (!user || !user.password) {
       throw new UnauthorizedException('Invalid credentials');
     }
 
-    const isPasswordValid = loginDto.password === user.password;
-    // Compare passwords
-    // const isPasswordValid = await bcrypt.compare(
-    //   loginDto.password,
-    //   user.password,
-    // );
+    // const isPasswordValid = await bcrypt.compare(loginDto.password, user.password);
+    const isPasswordValid = loginDto.password === user.password; // Remove this in production
 
     if (!isPasswordValid) {
       throw new UnauthorizedException('Invalid credentials');
     }
-    // Since Prisma operations are async, you should use await
-    const userType =
-      user?.userTypeId != null
-        ? await this.prisma.user_type.findUnique({
-            where: { id: user.userTypeId },
-          })
-        : undefined;
 
-    const userTypeName = userType?.type;
-    console.log(userTypeName);
+    const userTypeName = user.user_type?.type || 'user';
 
-    // Generate JWT token
     const payload = {
       sub: user.id,
       email: user.email,
       role: userTypeName,
     };
 
+    const token = this.jwtService.sign(payload);
+
+    res.cookie('access_token', token, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production', // HTTPS only in production
+      sameSite: 'strict', // Prevent CSRF attacks
+      maxAge: 24 * 60 * 60 * 1000, // 1 day expiry
+      path: '/',
+    });
+
     return {
-      access_token: this.jwtService.sign(payload),
       user: {
         id: user.id,
         firstName: user.first_name,
@@ -69,5 +57,11 @@ export class AuthService {
         role: userTypeName,
       },
     };
+  }
+
+  async logout(res: Response) {
+    // Clear the HTTP-only cookie
+    res.clearCookie('access_token');
+    return { message: 'Logged out successfully' };
   }
 }

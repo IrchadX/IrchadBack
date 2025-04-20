@@ -3,6 +3,7 @@ import { AppModule } from './app.module';
 import * as express from 'express';
 import { join } from 'path';
 import { ValidationPipe } from '@nestjs/common';
+import * as cookieParser from 'cookie-parser';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
@@ -17,9 +18,11 @@ async function bootstrap() {
     allowedHeaders: ['Content-Type', 'Authorization'],
   });
 
+  app.use(cookieParser());
+
   // Global validation pipe for all endpoints
   app.useGlobalPipes(new ValidationPipe());
 
-  await app.listen(3001); // Port du back-end
+  await app.listen(3001);
 }
 bootstrap();
