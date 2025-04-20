@@ -241,6 +241,17 @@ model zone {
   poi_zone    poi_zone[]
   environment environment? @relation(fields: [env_id], references: [id], onDelete: Cascade)
   map         map?         @relation(fields: [map_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  zone_type   zone_type?   @relation(fields: [type_id], references: [id])
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model zone_type {
+  id         Int      @id @default(autoincrement())
+  created_at DateTime @default(now()) @db.Timestamptz(6)
+  type       String?
+  color      String?
+  icon       String?
+  zone       zone[]
 }
 
 enum intervention_type {
