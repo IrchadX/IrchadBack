@@ -12,6 +12,9 @@ import { StatisticsModule } from './statistics/statistics.module';
 import { GraphicsModule } from './graphics/graphics.module';
 import { GraphicsController } from './graphics/graphics.controller'; 
 import { GraphicsService } from './graphics/graphics.service'; 
+import { ZonesModule } from './zones/zones.module';
+import { ZonesController } from './zones/zones.controller';
+import { ZonesService } from './zones/zones.service';
 
 
 @Module({
@@ -26,8 +29,9 @@ import { GraphicsService } from './graphics/graphics.service';
     ReportsModule,
     StatisticsModule,
     GraphicsModule,
+    ZonesModule,
   ],
-  controllers: [AppController,GraphicsController],
-  providers: [AppService,GraphicsService],
+  controllers: [AppController,GraphicsController,ZonesController],
+  providers: [AppService,GraphicsService,ZonesService],
 })
 export class AppModule {}

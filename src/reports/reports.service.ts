@@ -2,6 +2,8 @@ import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { ReportFilterDto } from '../dto/filter.dto';
 import pdfMake from './pdfmake-wrapper';
+import * as pdfFonts from 'pdfmake/build/vfs_fonts';
+
 
 @Injectable()
 export class ReportsService {
@@ -15,7 +17,6 @@ export class ReportsService {
     };
   }
 
-  // Récupérer les statistiques de pannes par type de dispositif
   async getPannesByDeviceType(): Promise<any> {
     const pannes = await this.prisma.panne_history.findMany({
       include: {
@@ -48,8 +49,8 @@ export class ReportsService {
     const pannePercentages = Object.keys(panneStats).map((type) => {
       return {
         deviceType: type,
-        percentage: ((panneStats[type] / totalPannes) * 100).toFixed(2), // pourcentage
-        count: panneStats[type], // nombre de pannes
+        percentage: ((panneStats[type] / totalPannes) * 100).toFixed(2),
+        count: panneStats[type],
       };
     });
 
@@ -64,25 +65,19 @@ export class ReportsService {
       this.prisma.device.count({
         where: {
           date_of_service: dateFilter,
-          state_type: {
-            state: 'en_service',
-          },
+          state_type: { state: 'en_service' },
         },
       }),
       this.prisma.device.count({
         where: {
           date_of_service: dateFilter,
-          state_type: {
-            state: 'en_maintenance',
-          },
+          state_type: { state: 'en_maintenance' },
         },
       }),
       this.prisma.device.count({
         where: {
           date_of_service: dateFilter,
-          state_type: {
-            state: 'defectueux',
-          },
+          state_type: { state: 'defectueux' },
         },
       }),
     ]);
@@ -97,6 +92,7 @@ export class ReportsService {
       percentageFaulty: total ? ((faulty / total) * 100).toFixed(2) : '0',
     };
   }
+
   async getAlertLevelsReport(): Promise<any> {
     const pannes = await this.prisma.panne_history.findMany({
       include: {
@@ -111,10 +107,10 @@ export class ReportsService {
         },
       },
     });
-  
+
     const alertStats = pannes.reduce((acc, panne) => {
-      const alertLevel = panne.alert?.level; // On suppose que 'level' est un champ de l'alerte
-  
+      const alertLevel = panne.alert?.level;
+
       if (alertLevel) {
         if (!acc[alertLevel]) {
           acc[alertLevel] = 1;
@@ -124,102 +120,103 @@ export class ReportsService {
       }
       return acc;
     }, {});
-  
+
     const totalPannes = pannes.length;
     const alertLevelPercentages = Object.keys(alertStats).map((level) => {
       return {
         level,
-        percentage: ((alertStats[level] / totalPannes) * 100).toFixed(2), // pourcentage
-        count: alertStats[level], // nombre de pannes par niveau d'alerte
+        percentage: ((alertStats[level] / totalPannes) * 100).toFixed(2),
+        count: alertStats[level],
       };
     });
-  
+
     return alertLevelPercentages;
   }
+
   async getDevicesByType(): Promise<any> {
     const devices = await this.prisma.device.findMany({
       include: {
         device_type: true,
       },
     });
-  
+
     const typeStats = devices.reduce((acc, device) => {
       const type = device.device_type?.type || 'Inconnu';
-  
+
       if (!acc[type]) {
         acc[type] = 1;
       } else {
         acc[type]++;
       }
-  
+
       return acc;
     }, {} as Record<string, number>);
-  
+
     const total = devices.length;
     const typePercentages = Object.entries(typeStats).map(([type, count]) => ({
       deviceType: type,
       count,
       percentage: ((count / total) * 100).toFixed(2),
     }));
-  
+
     return typePercentages;
   }
+
   async getAverageMaintenanceDuration(): Promise<any> {
     const interventions = await this.prisma.intervention_history.findMany({
       where: {
-        NOT: [
-          { completion_date: null },
-        ],
+        NOT: [{ completion_date: null }],
       },
     });
-  
+
     if (interventions.length === 0) {
       return { averageDurationDays: 0, count: 0 };
     }
-  
+
     const totalDurationMs = interventions.reduce((acc, intervention) => {
-      const { scheduled_date, completion_date } = intervention; // <= ici tu déclares les deux
+      const { scheduled_date, completion_date } = intervention;
 
-  if (!scheduled_date || !completion_date) return acc;
+      if (!scheduled_date || !completion_date) return acc;
 
-  const start = new Date(scheduled_date).getTime();
-  const end = new Date(completion_date).getTime();
+      const start = new Date(scheduled_date).getTime();
+      const end = new Date(completion_date).getTime();
       const duration = end - start;
       return acc + duration;
     }, 0);
-  
+
     const averageDurationMs = totalDurationMs / interventions.length;
     const averageDurationDays = (averageDurationMs / (1000 * 60 * 60 * 24)).toFixed(2);
-  
+
     return {
       averageDurationDays,
       count: interventions.length,
     };
   }
+
   async generateFleetStatusPDF(filter: ReportFilterDto): Promise<Buffer> {
     const fleetStatusData = await this.getFleetStatusReport(filter);
     const pannePercentages = await this.getPannesByDeviceType();
     const alertLevelsData = await this.getAlertLevelsReport();
     const deviceTypeStats = await this.getDevicesByType();
     const averageMaintenance = await this.getAverageMaintenanceDuration();
-  
+
     const docDefinition = {
       content: [
         { text: 'Rapport de dispositifs', style: 'header' },
-  
+        { text: `Date de génération : ${new Date().toLocaleDateString()}`, alignment: 'right', margin: [0, 0, 0, 10] },
         { text: 'État général de la flotte', style: 'subHeader' },
+        { text: `Total dispositifs : ${fleetStatusData.totalDevices}` },
         {
           table: {
             widths: ['*', '*'],
             body: [
-              ['Total dispositifs', `${fleetStatusData.totalDevices}`],
               ['En service', `${fleetStatusData.inService} (${fleetStatusData.percentageInService}%)`],
               ['En maintenance', `${fleetStatusData.inMaintenance} (${fleetStatusData.percentageInMaintenance}%)`],
               ['Défectueux', `${fleetStatusData.faulty} (${fleetStatusData.percentageFaulty}%)`],
             ],
           },
         },
-  
+
         { text: '\nRépartition des dispositifs par type', style: 'subHeader' },
         {
           table: {
@@ -230,7 +227,7 @@ export class ReportsService {
             ],
           },
         },
-  
+
         { text: '\nPannes par Type de Dispositif', style: 'subHeader' },
         {
           table: {
@@ -241,7 +238,7 @@ export class ReportsService {
             ],
           },
         },
-  
+
         { text: '\nTaux des alertes par niveau', style: 'subHeader' },
         {
           table: {
@@ -252,20 +249,12 @@ export class ReportsService {
             ],
           },
         },
-  
-        {
-          text: '\nDurée moyenne de maintenance', style: 'subHeader'
-        },
-        {
-          text: `Nombre d'interventions analysées : ${averageMaintenance.count}`
-        },
-        {
-          text: `Durée moyenne : ${averageMaintenance.averageDurationDays} jours`
-        },
-        
-     
+
+        { text: '\nDurée moyenne de maintenance', style: 'subHeader' },
+        { text: `Nombre d'interventions analysées : ${averageMaintenance.count}` },
+        { text: `Durée moyenne : ${averageMaintenance.averageDurationDays} jours` },
       ],
-  
+
       styles: {
         header: {
           alignment: 'center',
@@ -278,18 +267,15 @@ export class ReportsService {
           bold: true,
           margin: [0, 10, 0, 5],
         },
-        table: {
-          margin: [0, 5, 0, 5],
-        },
       },
     };
-  
+
     const pdfDocGenerator = pdfMake.createPdf(docDefinition);
-  
+
     return new Promise((resolve, reject) => {
       pdfDocGenerator.getBuffer((buffer: ArrayBuffer) => {
         resolve(Buffer.from(buffer));
       });
     });
   }
-}  
+}

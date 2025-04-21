@@ -7,8 +7,6 @@ import { Response } from 'express';
 export class ReportsController {
   constructor(private readonly reportsService: ReportsService) {}
 
-
-
   @Get('pdf')
   async getFleetStatusPDF(@Query() filter: ReportFilterDto, @Res() res: Response) {
     const pdfBuffer = await this.reportsService.generateFleetStatusPDF(filter);
