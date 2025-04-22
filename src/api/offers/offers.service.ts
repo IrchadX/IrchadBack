@@ -116,6 +116,52 @@ export class OffersService {
   }
 
   /**
+   * Récupérer l'accès aux environnements publics d'un utilisateur donné
+   * @param userId ID de l'utilisateur
+   */
+  async getUserAccess(userId: number) {
+    // Vérifier si l'utilisateur existe
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId },
+    });
+
+    if (!user) {
+      throw new NotFoundException(`Utilisateur avec l'ID ${userId} introuvable`);
+    }
+
+    // Récupérer les informations d'accès de l'utilisateur
+    const access = await this.prisma.purchase_history.findFirst({
+      where: { user_id: userId },
+      select: {
+        public: true,
+      },
+    });
+
+    if (!access) {
+      throw new NotFoundException(
+        `Aucun accès trouvé pour l'utilisateur avec l'ID ${userId}`,
+      );
+    }
+
+    const public_pricing = await this.prisma.pricing.findFirst({
+      where : {attribute : "public"},
+      select : {
+        price: true,
+      }
+    });
+    if (!public_pricing || !public_pricing.price) {
+      throw new NotFoundException('Tarif des environnements publics non défini dans la table pricing');
+    }
+
+    if (access.public){
+      return public_pricing.price.toFixed(2);
+    }else{
+      return 0;
+    }
+  }
+
+
+  /**
    * Récupérer les environnements d'un utilisateur donné
    * @param userId ID de l'utilisateur
    */

@@ -71,6 +71,23 @@ export class OffersController {
     }
   }
 
+  @Get ('user-public-access/:userId')
+  async getUserPublicEnvironments(@Param('userId', ParseIntPipe) userId: number) {
+    try {
+      return await this.offersService.getUserAccess(userId);
+    } catch (error) {
+      console.error('Error in getUserPublicEnvironments:', error);
+
+      if (error instanceof NotFoundException) {
+        throw error;
+      }
+
+      throw new BadRequestException(
+        `Une erreur s'est produite lors de la récupération des environnements publics pour l'utilisateur avec l'ID ${userId}: ${error.message}`,
+      );
+    }
+  }
+
   /**
    * Calculer le prix de chaque environnement pour un utilisateur donné
    * @param userId ID de l'utilisateur
