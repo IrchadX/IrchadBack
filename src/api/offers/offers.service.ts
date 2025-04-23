@@ -194,4 +194,60 @@ export class OffersService {
       },
     });
   }
+
+  /**
+   * Calculer le prix total d'une liste d'environnements
+   * @param environments Liste des environnements avec leur surface
+   * @param includePublicAccess Booléen indiquant si l'accès public doit être inclus
+   * @param device Objet device contenant un prix
+   * @returns Le prix total calculé
+   */
+  async estimateTotalPrice(
+    environments: { surface: number }[],
+    includePublicAccess: boolean,
+    device: { price?: number },
+  ): Promise<number> {
+    // Récupérer le tarif unitaire par mètre carré
+    const surfacePricing = await this.prisma.pricing.findFirst({
+      where: { attribute: 'surface' },
+    });
+
+    if (!surfacePricing || !surfacePricing.price) {
+      throw new NotFoundException(
+        'Tarif unitaire pour la surface non défini dans la table pricing',
+      );
+    }
+
+    const unitPrice = surfacePricing.price;
+
+    // Calculer le prix total des environnements
+    const totalEnvironmentPrice = environments.reduce((sum, env) => {
+      return sum + env.surface * unitPrice;
+    }, 0);
+
+    // Ajouter le prix de l'accès public si nécessaire
+    let publicAccessPrice = 0;
+    if (includePublicAccess) {
+      const publicPricing = await this.prisma.pricing.findFirst({
+        where: { attribute: 'public' },
+      });
+
+      if (!publicPricing || !publicPricing.price) {
+        throw new NotFoundException(
+          'Tarif pour l’accès public non défini dans la table pricing',
+        );
+      }
+
+      publicAccessPrice = publicPricing.price;
+    }
+
+    // Ajouter le prix du device
+    const devicePrice = device?.price || 0;
+
+    // Calculer le prix total
+    const totalPrice = totalEnvironmentPrice + publicAccessPrice + devicePrice;
+
+    console.log(`Prix total calculé : ${totalPrice}`);
+    return totalPrice;
+  }
 }

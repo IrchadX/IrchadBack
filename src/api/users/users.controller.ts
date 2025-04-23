@@ -78,6 +78,14 @@ export class UsersController {
     return this.usersService.findOne(id);
   }
 
+  @Get('by-name/:first_name,:family_name')
+  async findByName(
+    @Param('first_name') first_name: string,
+    @Param('family_name') family_name: string,
+  ) {
+    return this.usersService.findByName(first_name, family_name);
+  }
+
   @Patch(':id')
   async update(@Param('id') id: string, @Body() updateUserDto: UpdateUserDto) {
     return this.usersService.update(Number(id), updateUserDto);
