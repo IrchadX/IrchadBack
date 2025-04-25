@@ -1,6 +1,7 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service';
 import { CreateEnvironmentDto } from './dto/create-environment.dto';
+import { CreateBasicEnvironmentDto } from './dto/create-basic-environment.dto';
 import { UpdateEnvironmentDto } from './dto/update-environment.dto';
 import { CreateZoneDto } from '../zones/dto/create-zone.dto';
 import { CreatePoiDto } from '../pois/dto/create-poi.dto';
@@ -128,6 +129,51 @@ export class EnvironmentsService {
 
     return { environment, zones, pois };
   }
+
+  //create the environment instance and attach it to the user (created by commercial)
+  async createBasicEnvironment(basicEnvDto: CreateBasicEnvironmentDto) {
+    const { name, description, address, isPublic, surface, userId } = basicEnvDto;
+
+    console.log('🔹 Creating Basic Environment:', basicEnvDto);
+
+    // create the map
+    const map = await this.prisma.map.create({
+      data: { format_id: 1 },
+    });
+
+    console.log('Created Map:', map);
+
+    // create the environment
+    const environment = await this.prisma.environment.create({
+      data: {
+        name,
+        description,
+        is_public: isPublic,
+        address,
+        surface,
+        map_id: map.id,
+      },
+    });
+
+    console.log('Created Environment:', environment);
+
+    // create environment -> user correspondance
+    if (userId) {
+      console.log(`🔗 Associating environment ${environment.id} with user ${userId}`);
+
+      await this.prisma.env_user.create({
+        data: {
+          user_id: userId,
+          env_id: environment.id,
+        },
+      });
+    } else {
+      console.log(`⚠️ Skipping association because user_id is missing.`);
+    }
+
+    return environment;
+  }
+
 
   async update(id: string, updateEnvironmentDto: UpdateEnvironmentDto) {
     const envId = Number(id); // convert the id into a number
