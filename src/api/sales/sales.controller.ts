@@ -21,8 +21,9 @@ export class SalesController {
   async addPurchase(
     @Body('userId') userId: number,
     @Body('deviceId') deviceId: number,
+    @Body('hasPublicAccess') hasPublicAccess: boolean,
   ) {
-    return this.salesService.addPurchase(userId, deviceId);
+    return this.salesService.addPurchase(userId, deviceId, hasPublicAccess);
   }
 
   // Endpoint to get sales statistics

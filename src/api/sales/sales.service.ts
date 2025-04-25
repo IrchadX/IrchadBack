@@ -26,11 +26,12 @@ export class SalesService {
   }
 
   // Add a new purchase to the history
-  async addPurchase(userId: number, deviceId: number) {
+  async addPurchase(userId: number, deviceId: number, hasPublicAccess: boolean) {
     return this.prisma.purchase_history.create({
       data: {
         user_id: userId,
         device_id: deviceId,
+        public : hasPublicAccess,
       },
     });
   }
