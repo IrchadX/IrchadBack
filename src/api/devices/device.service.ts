@@ -60,6 +60,9 @@ export class DeviceService {
 
   async getDeviceByUserId(id: number) {
     return this.prisma.device.findMany({
+      include: {
+        device_type: { select: { type: true } },
+      },
       where: {
         user_id: id,
       },

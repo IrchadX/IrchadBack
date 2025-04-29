@@ -1,5 +1,7 @@
 import {
   Controller,
+  Post,
+  Body,
   UseGuards,
   Get,
   Param,
@@ -107,5 +109,36 @@ export class OffersController {
         `Une erreur s'est produite lors de lrécupération du dispositif de l'utilisateur avec l'ID ${userId}: ${error.message}`,
       );
     }
+  }
+
+  /**
+   * @param body Contient les environnements, le booléen pour l'accès public et le device
+   * @returns Le prix total calculé
+   */
+  @Post('estimate-total-price')
+  async estimateTotalPrice(@Body() body: any): Promise<number> {
+    const { environments, includePublicAccess, device } = body;
+
+    // Validation des données d'entrée
+    if (!Array.isArray(environments)) {
+      throw new BadRequestException('Environments doit être un tableau.');
+    }
+
+    if (typeof includePublicAccess !== 'boolean') {
+      throw new BadRequestException(
+        'includePublicAccess doit être un booléen.',
+      );
+    }
+
+    if (typeof device !== 'object' || device === null) {
+      throw new BadRequestException('Device doit être un objet valide.');
+    }
+
+    // Appeler le service pour calculer le prix total
+    return await this.offersService.estimateTotalPrice(
+      environments,
+      includePublicAccess,
+      device,
+    );
   }
 }
