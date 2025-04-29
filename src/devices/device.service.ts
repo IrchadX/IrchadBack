@@ -38,12 +38,31 @@ export class DeviceService {
     }
  
     async updateDevice(id: number, data: UpdateDeviceDto) {
-        return this.prisma.device.update({
-            where: {
-                id: id,
-            },
-            data        });
-    }
+      const updateData: any = { ...data };
+      if (updateData.state_type_id !== undefined) {
+          updateData.state_type = {
+              connect: { id: updateData.state_type_id }
+          };
+          delete updateData.state_type_id;
+      }
+      if (updateData.user_id !== undefined) {
+          updateData.user = {
+              connect: { id: updateData.user_id }
+          };
+          delete updateData.user_id;
+      }
+      if (updateData.type_id !== undefined) {
+          updateData.device_type = {
+              connect: { id: updateData.type_id }
+          };
+          delete updateData.type_id;
+      }
+      
+      return this.prisma.device.update({
+          where: { id },
+          data: updateData
+      });
+  }
 async setUser(id: number, user_id: number) {
   return this.prisma.device.update({
     where : {id:id},
@@ -86,10 +105,24 @@ async setUser(id: number, user_id: number) {
     }
     async getStateTypes()
     {
-      return this.prisma.state_type.findMany({
-        
+      return this.prisma.state_type.findMany({ 
       });
     }
+    async getTypeById(id:number) {
+    return this.prisma.device_type.findUnique({
+      where: {
+        id: id,
+      },
+    }
+  )
+}
+    async getStateTypeById(id:number) {
+    return this.prisma.state_type.findUnique({
+      where: {
+        id: id,
+      },
+    })
+  }
     async getUsersWithNoDevices() {
       const users = await this.prisma.user.findMany({
         where: {
@@ -104,5 +137,43 @@ async setUser(id: number, user_id: number) {
       });
       
       return users;
+    }
+    async getDevicesNotAssigned() {
+    const devices=await this.prisma.device.findMany({
+      where:{
+        user_id: null, 
+      }
+    })
+    return devices;
+    }
+    async getDevicesAssigned() {
+      const devices = await this.prisma.device.findMany({
+        where: {
+          user_id: {
+            not: null,
+          },
+        },
+      });
+      return devices;
+    }
+    async getUserByDeviceId(id:number) {
+      const user = await this.prisma.user.findUnique({
+        where: {
+          id: id,
+        },
+      });
+      
+      return user;
+    }
+    async toggleCommunicationState(id: number) {
+      const device = await this.prisma.device.findUnique({
+        where: { id: id },
+        select: { comm_state: true }
+      });
+      
+      return this.prisma.device.update({
+        where: { id: id },
+        data: { comm_state: !device?.comm_state },
+      });
     }
 }

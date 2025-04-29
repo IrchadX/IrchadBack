@@ -33,4 +33,6 @@ export class UpdateDeviceDto {
   @IsOptional()
   @Transform(({ value }) => Number(value)) 
   battery_capacity?: number;
+
+  
 }
