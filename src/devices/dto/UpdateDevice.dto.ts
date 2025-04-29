@@ -24,7 +24,7 @@ export class UpdateDeviceDto {
   @IsOptional()
   @Transform(({ value }) => Number(value)) 
   user_id?: number;
-
+ 
   @IsBoolean()
   @IsOptional()
   comm_state?: boolean;
