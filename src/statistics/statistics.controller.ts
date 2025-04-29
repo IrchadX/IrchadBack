@@ -46,6 +46,15 @@ async getTechnicalInterventionPercentage() {
   const percentage = await this.statisticsService.getTechnicalInterventionPercentage();
   return { percentage: percentage.toFixed(2) }; // ex: { percentage: "78.57" }
 }
+@Get('revenue')
+async getAnnualRevenue() {
+  const chiffre_affaire = await this.statisticsService.getAnnualRevenue();
+  return {chiffre_affaire}; 
+}
 
-  
+@Get('disponibilite')
+  async getDeviceAvailabilityRate(): Promise<{ Disponibilite: number }> {
+    const Disponibilite = await this.statisticsService.getDeviceAvailabilityRate();
+    return { Disponibilite };  
+  }
 }
