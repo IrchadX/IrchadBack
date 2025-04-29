@@ -43,12 +43,7 @@ export class EnvironmentsService {
     const environment = await this.prisma.environment.create({
       data: {
         name: properties.environment.name,
-<<<<<<< HEAD:src/api/environments/environments.service.ts
-        description: properties.environment.description,
-        is_public: properties.environment.isPublic,
-=======
         // user_id: Number(properties.environment.userId),
->>>>>>> devices:src/environments/environments.service.ts
         address: properties.environment.address,
         map_id: map.id,
       },
@@ -72,13 +67,10 @@ export class EnvironmentsService {
       console.log('✅ Inserted environment delimiter.');
     }
 
-<<<<<<< HEAD:src/api/environments/environments.service.ts
-=======
     // console.log(
     //   `🔗 Associating environment ${envId} with user ${environment.user_id}`,
     // );
 
->>>>>>> devices:src/environments/environments.service.ts
     // create environment -> user correspondance
     if (properties.environment.userId) {
       console.log(`🔗 Associating environment ${envId} with user ${userId}`);

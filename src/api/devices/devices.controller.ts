@@ -17,7 +17,6 @@ import {
 import { CreateDeviceDto } from './dto/CreateDevice.dto';
 import { UpdateDeviceDto } from './dto/UpdateDevice.dto';
 import { DeviceService } from './device.service';
-import { ConnectableObservable } from 'rxjs';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
 import { Roles } from '../auth/decorators/roles.decorator';

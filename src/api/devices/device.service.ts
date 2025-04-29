@@ -131,9 +131,7 @@ export class DeviceService {
               none: {} 
             }
           },
-          include: {
-            userType: true 
-          }
+         
         });
         
         return users;

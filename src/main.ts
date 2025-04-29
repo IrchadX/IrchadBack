@@ -20,7 +20,6 @@ async function bootstrap() {
 
   app.use(cookieParser());
 
-  // Global validation pipe for all endpoints
   app.useGlobalPipes(new ValidationPipe());
 
   await app.listen(5000);

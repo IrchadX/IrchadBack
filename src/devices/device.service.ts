@@ -131,9 +131,7 @@ async setUser(id: number, user_id: number) {
             none: {} 
           }
         },
-        include: {
-          userType: true 
-        }
+       
       });
       
       return users;
