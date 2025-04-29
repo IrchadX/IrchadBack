@@ -216,6 +216,7 @@ model user {
   helper_user_helper_user_helper_idTouser helper_user[]          @relation("helper_user_helper_idTouser")
   helper_user_helper_user_user_idTouser   helper_user[]          @relation("helper_user_user_idTouser")
   intervention_history                    intervention_history[]
+  notification_token                      notification_token?
   purchase_history                        purchase_history[]
   user_type                               user_type?             @relation(fields: [userTypeId], references: [id], onDelete: Cascade)
 }
@@ -241,6 +242,24 @@ model zone {
   poi_zone    poi_zone[]
   environment environment? @relation(fields: [env_id], references: [id], onDelete: Cascade)
   map         map?         @relation(fields: [map_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  zone_type   zone_type?   @relation(fields: [type_id], references: [id])
+}
+
+model notification_token {
+  id      Int    @id @default(autoincrement())
+  user_id Int    @unique
+  token   String @db.VarChar
+  user    user   @relation(fields: [user_id], references: [id], onDelete: Cascade)
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model zone_type {
+  id         Int      @id @default(autoincrement())
+  created_at DateTime @default(now()) @db.Timestamptz(6)
+  type       String?
+  color      String?
+  icon       String?
+  zone       zone[]
 }
 
 enum intervention_type {
