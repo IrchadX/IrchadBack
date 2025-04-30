@@ -100,6 +100,17 @@ export class DevicesController {
         throw new HttpException('Failed to fetch unassigned devices', HttpStatus.INTERNAL_SERVER_ERROR);
       }
     }
+
+    @Get('notAssigned2/')
+    async getDevicesNotAssigned2() {
+      try {
+        const stateTypes = await this.service.getDevicesNotAssigned2();
+        return stateTypes;
+      } catch (error) {
+        throw new HttpException('Failed to fetch unassigned devices', HttpStatus.INTERNAL_SERVER_ERROR);
+      }
+    }
+
     @Get('assigned/')
     async getDevicesAssigned() {
       try {
