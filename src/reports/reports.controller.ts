@@ -2,7 +2,14 @@ import { Controller, Get, Query, Res, HttpException, HttpStatus } from '@nestjs/
 import { ReportsService } from './reports.service';
 import { ReportFilterDto } from '../dto/filter.dto';
 import { Response } from 'express';
+import { Roles } from '../api/auth/decorators/roles.decorator';
+import { JwtAuthGuard } from '../api/auth/guards/jwt-auth.guard';
+import { RolesGuard } from '../api/auth/guards/roles.guard';
+import { UseGuards } from '@nestjs/common';
 
+/*
+@UseGuards(JwtAuthGuard, RolesGuard)
+@Roles('decideur')*/
 @Controller('reports')
 export class ReportsController {
   constructor(private readonly reportsService: ReportsService) {}

@@ -21,7 +21,7 @@ export class AuthService {
         email: loginDto.email,
       },
       include: {
-        userType: true,
+        user_type: true,
       },
     });
 
@@ -45,7 +45,7 @@ export class AuthService {
     const payload = {
       sub: user.id,
       email: user.email,
-      role: user.userType?.type,
+      role: user.user_type?.type,
     };
 
     return {
@@ -56,7 +56,7 @@ export class AuthService {
         familyName: user.family_name,
         email: user.email,
         phoneNumber: user.phone_number,
-        role: user.userType?.type,
+        role: user.user_type?.type,
       },
     };
   }

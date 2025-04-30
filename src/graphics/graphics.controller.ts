@@ -1,6 +1,12 @@
 import { Controller, Get } from '@nestjs/common';
 import {GraphicsService } from './graphics.service';
+import { Roles } from '../api/auth/decorators/roles.decorator';
+import { JwtAuthGuard } from '../api/auth/guards/jwt-auth.guard';
+import { RolesGuard } from '../api/auth/guards/roles.guard';
+import { UseGuards } from '@nestjs/common';
 
+/*@UseGuards(JwtAuthGuard, RolesGuard)
+@Roles('decideur')*/
 @Controller('graphics')
 export class GraphicsController {
   constructor(private readonly GraphicsService: GraphicsService) {}
