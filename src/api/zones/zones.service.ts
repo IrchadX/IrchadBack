@@ -12,7 +12,16 @@ export class ZonesService {
       data: {
         name: createZoneDto.name,
         description: createZoneDto.description,
-        coordinates: createZoneDto.coordinates, // Prisma handles JSON automatically
+        coordinates: createZoneDto.coordinates,
+      },
+    });
+  }
+
+  async findEnvironmentZones(id: string) {
+    const intId = parseInt(id);
+    return this.prisma.zone.findMany({
+      where: {
+        env_id: intId,
       },
     });
   }

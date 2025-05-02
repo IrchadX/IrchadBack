@@ -17,6 +17,15 @@ export class PoisService {
     return this.prisma.poi.findMany();
   }
 
+  async findEnvironmentPois(id: string) {
+    const intId = parseInt(id);
+    return this.prisma.poi.findMany({
+      where: {
+        env_id: intId,
+      },
+    });
+  }
+
   async findOne(id: number) {
     return this.prisma.poi.findUnique({
       where: { id },

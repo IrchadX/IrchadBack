@@ -26,6 +26,11 @@ export class PoisController {
     return this.poisService.create(createPoiDto);
   }
 
+  @Get('/env/:id')
+  findEnvironmentZones(@Param('id') id: string) {
+    return this.poisService.findEnvironmentPois(id);
+  }
+
   @Get()
   findAll() {
     return this.poisService.findAll();
