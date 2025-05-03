@@ -23,16 +23,41 @@ export class ZonesService {
       where: {
         env_id: intId,
       },
+      include: {
+        zone_type: {
+          select: {
+            color: true,
+            type: true,
+          },
+        },
+      },
     });
   }
 
   async findAll() {
-    return this.prisma.zone.findMany();
+    return this.prisma.zone.findMany({
+      include: {
+        zone_type: {
+          select: {
+            type: true,
+            color: true,
+          },
+        },
+      },
+    });
   }
 
   async findOne(id: number) {
     return this.prisma.zone.findUnique({
       where: { id },
+      include: {
+        zone_type: {
+          select: {
+            type: true,
+            color: true,
+          },
+        },
+      },
     });
   }
 

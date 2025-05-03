@@ -33,6 +33,5 @@ export class ZoneTypesService {
 
   async remove(id: number) {
     await this.prisma.zone_type.delete({ where: { id } });
-    return { message: `POI ${id} deleted` };
   }
 }

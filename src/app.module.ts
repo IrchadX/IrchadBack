@@ -18,8 +18,8 @@ import { StatisticsModule } from './api/statistics/statistics.module';
 import { GraphicsModule } from './api/graphics/graphics.module';
 import { GraphicsController } from './api/graphics/graphics.controller';
 import { GraphicsService } from './api/graphics/graphics.service';
-import { PoiCategoriesModule } from './poi-categories/poi-categories.module';
-import { ZoneTypesModule } from './zone-types/zone-types.module';
+import { PoiCategoriesModule } from './api/poi-categories/poi-categories.module';
+import { ZoneTypesModule } from './api/zone-types/zone-types.module';
 
 @Module({
   imports: [

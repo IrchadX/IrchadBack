@@ -131,6 +131,13 @@ model map {
   zone        zone[]
 }
 
+model notification_token {
+  id      Int    @id @default(autoincrement())
+  user_id Int    @unique
+  token   String @db.VarChar
+  user    user   @relation(fields: [user_id], references: [id], onDelete: Cascade)
+}
+
 model panne_history {
   id       Int    @id @default(autoincrement())
   alert_id Int?
@@ -243,13 +250,6 @@ model zone {
   environment environment? @relation(fields: [env_id], references: [id], onDelete: Cascade)
   map         map?         @relation(fields: [map_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
   zone_type   zone_type?   @relation(fields: [type_id], references: [id])
-}
-
-model notification_token {
-  id      Int    @id @default(autoincrement())
-  user_id Int    @unique
-  token   String @db.VarChar
-  user    user   @relation(fields: [user_id], references: [id], onDelete: Cascade)
 }
 
 /// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
