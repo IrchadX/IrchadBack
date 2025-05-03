@@ -254,12 +254,16 @@ model notification_token {
 
 /// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
 model zone_type {
-  id         Int      @id @default(autoincrement())
-  created_at DateTime @default(now()) @db.Timestamptz(6)
-  type       String?
-  color      String?
-  icon       String?
-  zone       zone[]
+  id          Int      @id @default(autoincrement())
+  created_at  DateTime @default(now()) @db.Timestamptz(6)
+  type        String?
+  color       String?
+  icon        String?
+  name        String?
+  description String?
+  priority    String?
+  accessible  Boolean?
+  zone        zone[]
 }
 
 enum intervention_type {

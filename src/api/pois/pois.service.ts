@@ -33,6 +33,7 @@ export class PoisService {
   }
 
   async update(id: number, updatePoiDto: UpdatePoiDto) {
+    console.log(updatePoiDto);
     return this.prisma.poi.update({
       where: { id },
       data: updatePoiDto,

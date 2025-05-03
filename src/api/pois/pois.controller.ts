@@ -43,7 +43,7 @@ export class PoisController {
 
   @Patch(':id')
   update(@Param('id') id: string, @Body() updatePoiDto: UpdatePoiDto) {
-    return this.poisService.update(Number(id), updatePoiDto);
+    return this.poisService.update(+id, updatePoiDto);
   }
 
   @Delete(':id')

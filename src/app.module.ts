@@ -18,6 +18,7 @@ import { StatisticsModule } from './api/statistics/statistics.module';
 import { GraphicsModule } from './api/graphics/graphics.module';
 import { GraphicsController } from './api/graphics/graphics.controller';
 import { GraphicsService } from './api/graphics/graphics.service';
+import { PoiCategoriesModule } from './poi-categories/poi-categories.module';
 
 @Module({
   imports: [
@@ -36,6 +37,7 @@ import { GraphicsService } from './api/graphics/graphics.service';
     ReportsModule,
     StatisticsModule,
     GraphicsModule,
+    PoiCategoriesModule,
   ],
   controllers: [AppController, GraphicsController],
   providers: [AppService, PrismaService, GraphicsService],
