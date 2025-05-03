@@ -4,7 +4,7 @@ import { CreatePoiCategoryDto } from './dto/create-poi-category.dto';
 import { UpdatePoiCategoryDto } from './dto/update-poi-category.dto';
 
 @Injectable()
-export class PoisService {
+export class PoiCategoriesService {
   constructor(private readonly prisma: PrismaService) {}
 
   async create(CreatePoiCategoryDto: CreatePoiCategoryDto) {

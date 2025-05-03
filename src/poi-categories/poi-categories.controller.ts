@@ -1,4 +1,12 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Body,
+  Patch,
+  Param,
+  Delete,
+} from '@nestjs/common';
 import { PoiCategoriesService } from './poi-categories.service';
 import { CreatePoiCategoryDto } from './dto/create-poi-category.dto';
 import { UpdatePoiCategoryDto } from './dto/update-poi-category.dto';
@@ -23,7 +31,10 @@ export class PoiCategoriesController {
   }
 
   @Patch(':id')
-  update(@Param('id') id: string, @Body() updatePoiCategoryDto: UpdatePoiCategoryDto) {
+  update(
+    @Param('id') id: string,
+    @Body() updatePoiCategoryDto: UpdatePoiCategoryDto,
+  ) {
     return this.poiCategoriesService.update(+id, updatePoiCategoryDto);
   }
 
