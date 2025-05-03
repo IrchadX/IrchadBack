@@ -19,6 +19,7 @@ import { GraphicsModule } from './api/graphics/graphics.module';
 import { GraphicsController } from './api/graphics/graphics.controller';
 import { GraphicsService } from './api/graphics/graphics.service';
 import { PoiCategoriesModule } from './poi-categories/poi-categories.module';
+import { ZoneTypesModule } from './zone-types/zone-types.module';
 
 @Module({
   imports: [
@@ -38,6 +39,7 @@ import { PoiCategoriesModule } from './poi-categories/poi-categories.module';
     StatisticsModule,
     GraphicsModule,
     PoiCategoriesModule,
+    ZoneTypesModule,
   ],
   controllers: [AppController, GraphicsController],
   providers: [AppService, PrismaService, GraphicsService],
