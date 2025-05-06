@@ -56,11 +56,12 @@ model emergency_contact {
 
 /// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
 model env_delimiter {
-  id          Int       @id @default(autoincrement())
-  created_at  DateTime  @default(now()) @db.Timestamptz(6)
-  updated_at  DateTime? @db.Timestamp(6)
+  id          Int          @id @default(autoincrement())
+  created_at  DateTime     @default(now()) @db.Timestamptz(6)
+  updated_at  DateTime?    @db.Timestamp(6)
   env_id      Int?
-  coordinates Json?     @db.Json
+  coordinates Json?        @db.Json
+  environment environment? @relation(fields: [env_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
 }
 
 /// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
@@ -75,19 +76,20 @@ model env_user {
 /// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
 /// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
 model environment {
-  id          Int        @id @default(autoincrement())
-  name        String     @db.VarChar
-  description String?    @db.VarChar
-  address     String?    @db.VarChar
-  created_at  DateTime?  @default(now()) @db.Timestamptz(6)
-  updated_at  DateTime?  @db.Timestamp(6)
-  map_id      Int?
-  is_public   Boolean?   @default(false)
-  surface     Float?     @db.Real
-  env_user    env_user[]
-  map         map?       @relation(fields: [map_id], references: [id], onDelete: Cascade)
-  poi         poi[]
-  zone        zone[]
+  id            Int             @id @default(autoincrement())
+  name          String          @db.VarChar
+  description   String?         @db.VarChar
+  address       String?         @db.VarChar
+  created_at    DateTime?       @default(now()) @db.Timestamptz(6)
+  updated_at    DateTime?       @db.Timestamp(6)
+  map_id        Int?
+  is_public     Boolean?        @default(false)
+  surface       Float?          @db.Real
+  env_delimiter env_delimiter[]
+  env_user      env_user[]
+  map           map?            @relation(fields: [map_id], references: [id], onDelete: Cascade)
+  poi           poi[]
+  zone          zone[]
 }
 
 /// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
@@ -254,7 +256,7 @@ model zone {
 
 /// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
 model zone_type {
-  id          Int      @id @default(autoincrement())
+  id          Int      @id @unique @default(autoincrement())
   created_at  DateTime @default(now()) @db.Timestamptz(6)
   type        String?
   color       String?

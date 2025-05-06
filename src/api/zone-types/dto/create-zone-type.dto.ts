@@ -4,12 +4,13 @@ import {
   IsString,
   MaxLength,
   IsEnum,
+  IsBoolean,
 } from 'class-validator';
 
 export enum ZonePriority {
-  LOW = 'Low',
-  MEDIUM = 'Medium',
-  HIGH = 'High',
+  LOW = 'Basse',
+  MEDIUM = 'Moyenne',
+  HIGH = 'Haute',
 }
 
 export class CreateZoneTypeDto {
@@ -41,7 +42,7 @@ export class CreateZoneTypeDto {
   @IsOptional()
   priority?: ZonePriority;
 
-  @IsString()
+  @IsBoolean()
   @IsOptional()
-  accessibility?: string;
+  accessible?: boolean;
 }

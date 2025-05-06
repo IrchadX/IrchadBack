@@ -8,8 +8,20 @@ export class ZoneTypesService {
   constructor(private readonly prisma: PrismaService) {}
 
   async create(CreateZoneTypeDto: CreateZoneTypeDto) {
+    console.log(CreateZoneTypeDto);
+    const { type, color, icon, name, description, priority, accessible } =
+      CreateZoneTypeDto;
+
     return this.prisma.zone_type.create({
-      data: CreateZoneTypeDto,
+      data: {
+        type,
+        color,
+        icon,
+        name,
+        description,
+        priority,
+        accessible,
+      },
     });
   }
 

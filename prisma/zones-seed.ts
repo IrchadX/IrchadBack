@@ -5,7 +5,6 @@ const prisma = new PrismaClient();
 async function main() {
   const zoneTypes = [
     {
-      id: 1,
       type: 'Salle de réunion',
       color: '#FF5733',
       icon: 'Table avec chaises',
@@ -16,7 +15,6 @@ async function main() {
       accessible: true,
     },
     {
-      id: 2,
       type: 'Zone d’urgence',
       color: '#FF0000',
       icon: "Signal d'alerte ou extincteur",
@@ -27,7 +25,6 @@ async function main() {
       accessible: true,
     },
     {
-      id: 3,
       type: 'Salle de détente',
       color: '#A8D5BA',
       icon: 'Canapé ou fauteuil',
@@ -37,7 +34,6 @@ async function main() {
       accessible: true,
     },
     {
-      id: 4,
       type: 'Salle de sport',
       color: '#FFA726',
       icon: 'Haltère ou équipement sportif',
@@ -47,7 +43,6 @@ async function main() {
       accessible: false,
     },
     {
-      id: 5,
       type: 'Café',
       color: '#A9746E',
       icon: 'Tasse de café',
@@ -57,7 +52,6 @@ async function main() {
       accessible: true,
     },
     {
-      id: 6,
       type: 'Bibliothèque',
       color: '#F5F5DC',
       icon: 'Livre ouvert',
@@ -67,7 +61,6 @@ async function main() {
       accessible: true,
     },
     {
-      id: 7,
       type: 'Salle de jeux',
       color: '#FF4081',
       icon: 'Manette ou borne arcade',
@@ -77,7 +70,6 @@ async function main() {
       accessible: true,
     },
     {
-      id: 8,
       type: 'Zone de circulation',
       color: '#CFD8DC',
       icon: 'Flèche directionnelle',
@@ -87,7 +79,6 @@ async function main() {
       accessible: true,
     },
     {
-      id: 9,
       type: 'Salle de conférences',
       color: '#455A64',
       icon: 'Micro ou pupitre',
@@ -97,7 +88,6 @@ async function main() {
       accessible: true,
     },
     {
-      id: 10,
       type: 'Bureau',
       color: '#BDBDBD',
       icon: 'Bureau avec chaise',
@@ -107,7 +97,6 @@ async function main() {
       accessible: true,
     },
     {
-      id: 11,
       type: 'Zone de services',
       color: '#9E9E9E',
       icon: 'Balai, outil ou chariot',
@@ -118,7 +107,6 @@ async function main() {
       accessible: false,
     },
     {
-      id: 12,
       type: 'Zone technique',
       color: '#607D8B',
       icon: 'Engrenage ou tableau électrique',
@@ -128,7 +116,6 @@ async function main() {
       accessible: false,
     },
     {
-      id: 13,
       type: 'Atelier',
       color: '#FFA000',
       icon: 'Clé à molette ou établi',
@@ -138,7 +125,6 @@ async function main() {
       accessible: true,
     },
     {
-      id: 14,
       type: 'Zone d’archives',
       color: '#D7CCC8',
       icon: 'Dossier ou étagère',
@@ -148,7 +134,6 @@ async function main() {
       accessible: false,
     },
     {
-      id: 15,
       type: 'Infirmerie / Assistance médicale',
       color: '#E91E63',
       icon: 'Croix médicale',
@@ -158,7 +143,6 @@ async function main() {
       accessible: true,
     },
     {
-      id: 16,
       type: "Point d'information",
       color: '#03A9F4',
       icon: "i d'information",
