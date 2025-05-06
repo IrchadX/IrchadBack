@@ -19,6 +19,7 @@ import { ZonesModule } from './zones/zones.module';
 import { ZonesController } from './zones/zones.controller';
 import { ZonesService } from './zones/zones.service';
 import { DataAnalysisModule } from './data_analysis/data_analysis.module';
+import { ProfilModule } from './profil/profil.module';
 
 
 @Module({
@@ -38,6 +39,7 @@ import { DataAnalysisModule } from './data_analysis/data_analysis.module';
     GraphicsModule,
     ZonesModule,
     DataAnalysisModule,
+    ProfilModule,
   ],
   controllers: [AppController,GraphicsController,ZonesController],
   providers: [AppService,GraphicsService,ZonesService],
