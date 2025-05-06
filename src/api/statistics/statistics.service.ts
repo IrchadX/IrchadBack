@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service';
-import { alert } from '@prisma/client';
+import { AlertDto } from './dto/AlertDto';
 
 @Injectable()
 export class StatisticsService {
@@ -64,8 +64,18 @@ export class StatisticsService {
     return result[0]?.avg_duration ?? null;
   }
 
-  async getAllAlerts(): Promise<alert[]> {
-    return this.prisma.alert.findMany();
+  async getAllAlerts(): Promise<AlertDto[]> {
+    const alerts = await this.prisma.alert.findMany();
+    return alerts.map((alert) => ({
+      id: alert.id,
+      type: alert.type,
+      time: alert.time,
+      date: alert.date,
+      zone: alert.zone,
+      status: alert.status,
+      device_id: alert.device_id,
+      level: alert.level,
+    }));
   }
 
   async getTechnicalInterventionPercentage(): Promise<number> {

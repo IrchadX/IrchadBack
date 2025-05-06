@@ -161,11 +161,14 @@ export class ReportsService {
     );
 
     const total = devices.length;
-    const typePercentages = Object.entries(typeStats).map(([type, count]) => ({
-      deviceType: type,
-      count,
-      percentage: ((count / total) * 100).toFixed(2),
-    }));
+    const typePercentages = Object.entries(typeStats).map(([type, count]) => {
+      const countNumber = count as number;
+      return {
+        deviceType: type,
+        count: countNumber,
+        percentage: ((countNumber / total) * 100).toFixed(2),
+      };
+    });
 
     return typePercentages;
   }

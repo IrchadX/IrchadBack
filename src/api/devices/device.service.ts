@@ -136,11 +136,35 @@ export class DeviceService {
         
         return users;
       }
+
       async getDevicesNotAssigned() {
       const devices=await this.prisma.device.findMany({
         where:{
           user_id: null, 
         }
+      })
+      return devices;
+      }
+
+      async getDevicesNotAssigned2() {
+      const devices=await this.prisma.device.findMany({
+        where:{
+          user_id: null, 
+        },
+        select: {
+          id: true,
+          mac_address: true,
+          software_version: true,
+          date_of_service: true,
+          comm_state: true,
+          battery_capacity: true,
+          price: true,
+          device_type: {
+            select: {
+              type: true, // Include the type name
+            },
+          },
+        },
       })
       return devices;
       }
