@@ -696,6 +696,10 @@ export class EnvironmentsService {
   async delete(id: string) {
     const envId = Number(id);
 
+    await this.prisma.env_delimiter.deleteMany({ where: { env_id: envId } });
+    await this.prisma.zone.deleteMany({ where: { env_id: envId } });
+    await this.prisma.poi.deleteMany({ where: { env_id: envId } });
+
     const environment = await this.prisma.environment.findUnique({
       where: { id: envId },
     });
@@ -706,8 +710,6 @@ export class EnvironmentsService {
 
     console.log(`🗑️ Deleting Environment ID: ${envId}`);
 
-    await this.prisma.zone.deleteMany({ where: { env_id: envId } });
-    await this.prisma.poi.deleteMany({ where: { env_id: envId } });
     await this.prisma.environment.delete({ where: { id: envId } });
 
     console.log('✅ Environment, Zones, and POIs deleted successfully.');
