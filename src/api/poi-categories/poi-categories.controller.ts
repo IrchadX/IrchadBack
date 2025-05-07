@@ -10,7 +10,13 @@ import {
 import { PoiCategoriesService } from './poi-categories.service';
 import { CreatePoiCategoryDto } from './dto/create-poi-category.dto';
 import { UpdatePoiCategoryDto } from './dto/update-poi-category.dto';
+import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import { RolesGuard } from '../auth/guards/roles.guard';
+import { Roles } from '../auth/decorators/roles.decorator';
+import { UseGuards } from '@nestjs/common';
 
+@UseGuards(JwtAuthGuard, RolesGuard)
+@Roles('admin', 'super_admin')
 @Controller('poi-categories')
 export class PoiCategoriesController {
   constructor(private readonly poiCategoriesService: PoiCategoriesService) {}

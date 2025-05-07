@@ -677,6 +677,7 @@ export class EnvironmentsService {
       include: {
         zone: true,
         poi: true,
+        env_user: true,
       },
     });
 
