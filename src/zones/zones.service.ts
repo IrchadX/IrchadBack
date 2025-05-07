@@ -1,33 +1,80 @@
 import { Injectable } from '@nestjs/common';
-import { PrismaService } from '../prisma/prisma.service';
-
+import { PrismaService } from 'src/prisma/prisma.service';
+import { CreateZoneDto } from './dto/create-zone.dto';
+import { UpdateZoneDto } from './dto/update-zone.dto';
 @Injectable()
 export class ZonesService {
   constructor(private readonly prisma: PrismaService) {}
 
-  async getAllPolygonCenters(): Promise<{ latitude: number; longitude: number }[]> {
-    const polygons = await this.prisma.env_delimiter.findMany();
+  async create(createZoneDto: CreateZoneDto) {
+    return this.prisma.zone.create({
+      data: {
+        name: createZoneDto.name,
+        description: createZoneDto.description,
+        coordinates: createZoneDto.coordinates,
+      },
+    });
+  }
 
-    const centers = polygons
-      .map((poly) => {
-        const coordinates = poly.coordinates?.[0]; // le contour principal
-        if (!coordinates || coordinates.length === 0) return null;
+  async findEnvironmentZones(id: string) {
+    const intId = parseInt(id);
+    return this.prisma.zone.findMany({
+      where: {
+        env_id: intId,
+      },
+      include: {
+        zone_type: {
+          select: {
+            color: true,
+            type: true,
+          },
+        },
+      },
+    });
+  }
 
-        let latSum = 0;
-        let lonSum = 0;
+  async findAll() {
+    return this.prisma.zone.findMany({
+      include: {
+        zone_type: {
+          select: {
+            type: true,
+            color: true,
+          },
+        },
+      },
+    });
+  }
 
-        coordinates.forEach(([lon, lat]) => {
-          latSum += lat;
-          lonSum += lon;
-        });
+  async findOne(id: number) {
+    return this.prisma.zone.findUnique({
+      where: { id },
+      include: {
+        zone_type: {
+          select: {
+            type: true,
+            color: true,
+          },
+        },
+      },
+    });
+  }
 
-        return {
-          latitude: latSum / coordinates.length,
-          longitude: lonSum / coordinates.length,
-        };
-      })
-      .filter((center): center is { latitude: number; longitude: number } => center !== null); // <-- typage correct ici
+  async update(id: number, updateZoneDto: UpdateZoneDto) {
+    return this.prisma.zone.update({
+      where: { id },
+      data: {
+        name: updateZoneDto.name,
+        description: updateZoneDto.description,
+        coordinates: updateZoneDto.coordinates,
+      },
+    });
+  }
 
-    return centers;
+  async remove(id: number) {
+    await this.prisma.zone.delete({
+      where: { id },
+    });
+    return { message: `Zone ${id} deleted` };
   }
 }
