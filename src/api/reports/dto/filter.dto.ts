@@ -1,11 +1,6 @@
-import { IsOptional, IsDateString } from 'class-validator';
-
 export class ReportFilterDto {
-  @IsOptional()
-  @IsDateString()
-  startDate?: string;
-
-  @IsOptional()
-  @IsDateString()
-  endDate?: string;
-}
+    startDate?: string;
+    endDate?: string;
+    deviceType?: string;
+    alertLevel?: string;
+  }

@@ -33,6 +33,7 @@ model device {
   connection_state Boolean?           @default(true)
   battery_capacity Int                @default(0)
   price            Float?             @db.Real
+  price            Float?             @db.Real
   alert            alert[]
   state_type       state_type         @relation(fields: [state_type_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
   device_type      device_type        @relation(fields: [type_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
@@ -251,6 +252,7 @@ model zone {
   poi_zone    poi_zone[]
   environment environment? @relation(fields: [env_id], references: [id], onDelete: Cascade)
   map         map?         @relation(fields: [map_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  zone_type   zone_type?   @relation(fields: [type_id], references: [id])
   zone_type   zone_type?   @relation(fields: [type_id], references: [id])
 }
 

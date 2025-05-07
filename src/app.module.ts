@@ -7,7 +7,6 @@ import { UsersModule } from './api/users/users.module';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { EnvironmentsModule } from './api/environments/environments.module';
-import { ZonesModule } from './api/zones/zones.module';
 import { PoisModule } from './api/pois/pois.module';
 import { DevicesModule } from './api/devices/devices.module';
 import { SalesModule } from './api/sales/sales.module';
@@ -16,11 +15,13 @@ import { PrismaService } from './prisma/prisma.service';
 import { ReportsModule } from './api/reports/reports.module';
 import { StatisticsModule } from './api/statistics/statistics.module';
 import { GraphicsModule } from './api/graphics/graphics.module';
-import { GraphicsController } from './api/graphics/graphics.controller';
+import { GraphicsController } from './graphics/graphics.controller';
 import { GraphicsService } from './api/graphics/graphics.service';
-import { PoiCategoriesModule } from './api/poi-categories/poi-categories.module';
-import { ZoneTypesModule } from './api/zone-types/zone-types.module';
-
+import { ZonesModule } from './zones/zones.module';
+import { ZonesController } from './zones/zones.controller';
+import { ZonesService } from './zones/zones.service';
+import { DataAnalysisModule } from './data_analysis/data_analysis.module';
+import { ProfilModule } from './api/profil/profil.module';
 @Module({
   imports: [
     ConfigModule.forRoot({
@@ -38,10 +39,11 @@ import { ZoneTypesModule } from './api/zone-types/zone-types.module';
     ReportsModule,
     StatisticsModule,
     GraphicsModule,
-    PoiCategoriesModule,
-    ZoneTypesModule,
+    ZonesModule,
+    DataAnalysisModule,
+    ProfilModule,
   ],
-  controllers: [AppController, GraphicsController],
-  providers: [AppService, PrismaService, GraphicsService],
+  controllers: [AppController, GraphicsController, ZonesController],
+  providers: [AppService, GraphicsService, ZonesService],
 })
 export class AppModule {}
