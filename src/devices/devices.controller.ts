@@ -1,34 +1,34 @@
-// /* eslint-disable prettier/prettier */ 
-// /* eslint-disable @typescript-eslint/no-unsafe-argument */ 
-// import { Body, Controller, Delete, Get, Param, Patch, Post, UsePipes, ValidationPipe, HttpException, HttpStatus, NotFoundException } from '@nestjs/common'; 
-// import { CreateDeviceDto } from './dto/CreateDevice.dto'; 
+// /* eslint-disable prettier/prettier */
+// /* eslint-disable @typescript-eslint/no-unsafe-argument */
+// import { Body, Controller, Delete, Get, Param, Patch, Post, UsePipes, ValidationPipe, HttpException, HttpStatus, NotFoundException } from '@nestjs/common';
+// import { CreateDeviceDto } from './dto/CreateDevice.dto';
 // import { UpdateDeviceDto } from './dto/UpdateDevice.dto';
-// import { DeviceService } from './device.service'; 
- 
-// @Controller('devices') 
-// export class DevicesController { 
-//   constructor(private service: DeviceService) {} 
-  
-//   @Get() 
-//   async getAllDevices() { 
+// import { DeviceService } from './device.service';
+
+// @Controller('devices')
+// export class DevicesController {
+//   constructor(private service: DeviceService) {}
+
+//   @Get()
+//   async getAllDevices() {
 //     try {
-//       return await this.service.getDevices(); 
+//       return await this.service.getDevices();
 //     } catch (error) {
 //       console.error("Error fetching devices:", error);
 //       throw new HttpException('Failed to fetch devices', HttpStatus.INTERNAL_SERVER_ERROR);
 //     }
-//   } 
- 
-//   @Post() 
-//   @UsePipes(new ValidationPipe({forbidNonWhitelisted: true})) 
-//   async createDevice(@Body() body: CreateDeviceDto) { 
+//   }
+
+//   @Post()
+//   @UsePipes(new ValidationPipe({forbidNonWhitelisted: true}))
+//   async createDevice(@Body() body: CreateDeviceDto) {
 //     try {
-//       return await this.service.createDevice(body); 
+//       return await this.service.createDevice(body);
 //     } catch (error) {
 //       console.error("Error creating device:", error);
 //       throw new HttpException('Failed to create device', HttpStatus.BAD_REQUEST);
 //     }
-//   } 
+//   }
 //   @Get('types/')
 //   async getDeviceTypes()
 //   {
@@ -36,7 +36,7 @@
 //     try {
 //       const types = await this.service.getDeviceTypes();
 //       console.log("types")
-//       console.log(types) 
+//       console.log(types)
 //       return types;
 //     } catch (error) {
 //       console.log("function calld")
@@ -56,9 +56,9 @@
 //       throw new HttpException('Failed to fetch state types', HttpStatus.INTERNAL_SERVER_ERROR);
 //     }
 //   }
- 
-//   @Get('users/:id') 
-//   async getUserByDeviceId(@Param('id') id: string) { 
+
+//   @Get('users/:id')
+//   async getUserByDeviceId(@Param('id') id: string) {
 //    try
 //    {
 //       const user = await this.service.getUserByDeviceId(Number(id));
@@ -69,8 +69,7 @@
 //     }
 //     catch (error) {
 //    }
-//   } 
-
+//   }
 
 //   @Get('notAssigned/')
 //   async getDevicesNotAssigned() {
@@ -90,8 +89,8 @@
 //       throw new HttpException('Failed to fetch assigned devices', HttpStatus.INTERNAL_SERVER_ERROR);
 //     }
 //   }
-//   @Get(':id') 
-//   async getDeviceById(@Param('id') id: string) { 
+//   @Get(':id')
+//   async getDeviceById(@Param('id') id: string) {
 //     try {
 //       const device = await this.service.getDeviceById(Number(id));
 //       if (!device) {
@@ -104,10 +103,10 @@
 //       }
 //       throw new HttpException('Failed to fetch device77777777777', HttpStatus.INTERNAL_SERVER_ERROR);
 //     }
-//   } 
-  
-//   @Patch(':id') 
-//   async updateDevice(@Param('id') id: string, @Body(new ValidationPipe({forbidNonWhitelisted: true})) body: UpdateDeviceDto) { 
+//   }
+
+//   @Patch(':id')
+//   async updateDevice(@Param('id') id: string, @Body(new ValidationPipe({forbidNonWhitelisted: true})) body: UpdateDeviceDto) {
 //     try {
 //       console.log('from th backend *****************************************')
 //       console.log(body)
@@ -125,8 +124,7 @@
 //       throw new HttpException('Failed to update device', HttpStatus.INTERNAL_SERVER_ERROR);
 //     }
 //   }
-  
-  
+
 //   @Delete(':id')
 //   async deleteDevice(@Param('id') id: string) {
 //     try {
@@ -143,7 +141,7 @@
 //       throw new HttpException('Failed to delete device', HttpStatus.INTERNAL_SERVER_ERROR);
 //     }
 //   }
-  
+
 //   @Get('user/:id')
 //   async getDevicesByUserId(@Param('id') id: string) {
 //     try {
@@ -153,7 +151,6 @@
 //       throw new HttpException('Failed to fetch devices by user ID', HttpStatus.INTERNAL_SERVER_ERROR);
 //     }
 //   }
-  
 
 //   @Get('device_type/:id')
 //   async getTypeById(@Param('id') id: string) {
@@ -203,4 +200,4 @@
 //  console.error("Error blocking communication:", error);
 // }
 // }
-// } 
+// }

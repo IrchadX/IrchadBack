@@ -26,6 +26,11 @@ export class ZonesController {
     return this.zonesService.create(createZoneDto);
   }
 
+  @Get('/env/:id')
+  findEnvironmentZones(@Param('id') id: string) {
+    return this.zonesService.findEnvironmentZones(id);
+  }
+
   @Get()
   findAll() {
     return this.zonesService.findAll();

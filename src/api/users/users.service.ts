@@ -266,7 +266,7 @@ export class UsersService {
     }
   }
 
-  async findByName( firstName: string, familyName: string,){
+  async findByName(firstName: string, familyName: string) {
     try {
       const user = await this.prisma.user.findFirst({
         where: {
@@ -276,7 +276,9 @@ export class UsersService {
       });
 
       if (!user) {
-        throw new NotFoundException(`User with name ${firstName} ${familyName} not found`);
+        throw new NotFoundException(
+          `User with name ${firstName} ${familyName} not found`,
+        );
       }
 
       return user;
@@ -285,5 +287,4 @@ export class UsersService {
       throw new InternalServerErrorException('Failed to fetch user by name');
     }
   }
-
 }

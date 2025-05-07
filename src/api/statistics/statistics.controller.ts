@@ -1,12 +1,12 @@
-import { Controller, Get, UseGuards } from '@nestjs/common';
+import { Controller, Get } from '@nestjs/common';
 import { StatisticsService } from './statistics.service';
-import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
-import { RolesGuard } from '../auth/guards/roles.guard';
+import { alert } from '@prisma/client';
 import { Roles } from '../auth/decorators/roles.decorator';
-import { AlertDto } from './dto/AlertDto';
+import { UseGuards } from '@nestjs/common';
+import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 
-@UseGuards(JwtAuthGuard, RolesGuard)
-@Roles('decideur')
+/*@UseGuards(JwtAuthGuard, RolesGuard)
+@Roles('decideur')*/
 @Controller('statistics')
 export class StatisticsController {
   constructor(private readonly statisticsService: StatisticsService) {}
@@ -16,13 +16,11 @@ export class StatisticsController {
     const totalUsers = await this.statisticsService.getUserCount();
     return { totalUsers };
   }
-
   @Get('alerts-count')
   async getAlertsCount(): Promise<{ totalAlerts: number }> {
     const totalAlerts = await this.statisticsService.getAlertsCount();
     return { totalAlerts };
   }
-
   @Get('device-count')
   async getDeviceCount(): Promise<{ totalDevice: number }> {
     try {
@@ -36,14 +34,12 @@ export class StatisticsController {
       return { totalDevice: 0 };
     }
   }
-
   @Get('inactive-device-count')
   async getInactiveDeviceCount(): Promise<{ totalInactiveDevices: number }> {
     const totalInactiveDevices =
       await this.statisticsService.getInactiveDeviceCount();
     return { totalInactiveDevices };
   }
-
   @Get('average-intervention-duration')
   async getAverageInterventionDuration(): Promise<{
     avgDuration: number | null;
@@ -52,17 +48,27 @@ export class StatisticsController {
       await this.statisticsService.getAverageInterventionDuration();
     return { avgDuration };
   }
-
   @Get('all-alerts')
-  async getAllAlerts(): Promise<{ alerts: AlertDto[] }> {
+  async getAllAlerts(): Promise<{ alerts: alert[] }> {
     const alerts = await this.statisticsService.getAllAlerts();
     return { alerts };
   }
-
   @Get('interventions')
   async getTechnicalInterventionPercentage() {
     const percentage =
       await this.statisticsService.getTechnicalInterventionPercentage();
     return { percentage: percentage.toFixed(2) }; // ex: { percentage: "78.57" }
+  }
+  @Get('revenue')
+  async getAnnualRevenue() {
+    const chiffre_affaire = await this.statisticsService.getAnnualRevenue();
+    return { chiffre_affaire };
+  }
+
+  @Get('disponibilite')
+  async getDeviceAvailabilityRate(): Promise<{ Disponibilite: number }> {
+    const Disponibilite =
+      await this.statisticsService.getDeviceAvailabilityRate();
+    return { Disponibilite };
   }
 }

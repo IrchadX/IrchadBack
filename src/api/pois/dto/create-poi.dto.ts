@@ -32,5 +32,9 @@ export class CreatePoiDto {
 
   @IsOptional()
   @IsNumber()
+  map_id?: number | null;
+
+  @IsOptional()
+  @IsNumber()
   category_id?: number | null;
 }
