@@ -33,7 +33,6 @@ model device {
   connection_state Boolean?           @default(true)
   battery_capacity Int                @default(0)
   price            Float?             @db.Real
-  price            Float?             @db.Real
   alert            alert[]
   state_type       state_type         @relation(fields: [state_type_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
   device_type      device_type        @relation(fields: [type_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
@@ -120,6 +119,8 @@ model intervention_history {
   description      String?
   status           String?
   type             intervention_type?
+  title            String?
+  location         String?
   user             user?              @relation(fields: [maintenancier_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
 }
 
@@ -253,7 +254,6 @@ model zone {
   environment environment? @relation(fields: [env_id], references: [id], onDelete: Cascade)
   map         map?         @relation(fields: [map_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
   zone_type   zone_type?   @relation(fields: [type_id], references: [id])
-  zone_type   zone_type?   @relation(fields: [type_id], references: [id])
 }
 
 /// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
@@ -282,6 +282,12 @@ enum level {
   modere
 }
 
+enum level_new {
+  mineur
+  modere
+  critique
+}
+
 enum state_enum {
   en_service
   defectueux
@@ -291,10 +297,4 @@ enum state_enum {
 enum type {
   technique
   Non_technique @map("Non technique")
-}
-
-enum level_new {
-  mineur
-  modere
-  critique
 }
