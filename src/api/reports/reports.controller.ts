@@ -9,13 +9,7 @@ import {
 import { ReportsService } from './reports.service';
 import { ReportFilterDto } from './dto/filter.dto';
 import { Response } from 'express';
-import { Roles } from '../auth/decorators/roles.decorator';
-import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
-import { UseGuards } from '@nestjs/common';
-import { RolesGuard } from '../auth/guards/roles.guard';
-/*
-@UseGuards(JwtAuthGuard, RolesGuard)
-@Roles('decideur')*/
+
 @Controller('reports')
 export class ReportsController {
   constructor(private readonly reportsService: ReportsService) {}

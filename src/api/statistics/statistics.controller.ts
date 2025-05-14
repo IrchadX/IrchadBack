@@ -1,12 +1,7 @@
 import { Controller, Get } from '@nestjs/common';
 import { StatisticsService } from './statistics.service';
 import { alert } from '@prisma/client';
-import { Roles } from '../auth/decorators/roles.decorator';
-import { UseGuards } from '@nestjs/common';
-import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 
-/*@UseGuards(JwtAuthGuard, RolesGuard)
-@Roles('decideur')*/
 @Controller('statistics')
 export class StatisticsController {
   constructor(private readonly statisticsService: StatisticsService) {}

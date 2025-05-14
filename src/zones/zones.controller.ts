@@ -10,13 +10,7 @@ import {
 import { ZonesService } from './zones.service';
 import { CreateZoneDto } from './dto/create-zone.dto';
 import { UpdateZoneDto } from './dto/update-zone.dto';
-import { JwtAuthGuard } from '@/api/auth/guards/jwt-auth.guard';
-import { RolesGuard } from '@/api/auth/guards/roles.guard';
-import { Roles } from '@/api/auth/decorators/roles.decorator';
-import { UseGuards } from '@nestjs/common';
 
-@UseGuards(JwtAuthGuard, RolesGuard)
-@Roles('commercial', 'admin', 'super_admin', 'decideur')
 @Controller('zones')
 export class ZonesController {
   constructor(private readonly zonesService: ZonesService) {}

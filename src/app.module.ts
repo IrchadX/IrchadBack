@@ -1,7 +1,6 @@
 // src/app.module.ts
 import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
-import { AuthModule } from './api/auth/auth.module';
 import { PrismaModule } from './prisma/prisma.module';
 import { UsersModule } from './api/users/users.module';
 import { AppController } from './app.controller';
@@ -11,8 +10,9 @@ import { PoisModule } from './api/pois/pois.module';
 import { DevicesModule } from './api/devices/devices.module';
 import { SalesModule } from './api/sales/sales.module';
 import { OffersModule } from './api/offers/offers.module';
-import { PrismaService } from './prisma/prisma.service';
+import { APP_GUARD } from '@nestjs/core';
 import { ReportsModule } from './api/reports/reports.module';
+import { GatewayRolesGuard } from './decorators/gateway-roles.decorator';
 import { StatisticsModule } from './api/statistics/statistics.module';
 import { GraphicsModule } from './api/graphics/graphics.module';
 import { GraphicsController } from './api/graphics/graphics.controller';
@@ -31,7 +31,6 @@ import { ZoneTypesModule } from './api/zone-types/zone-types.module';
     }),
     PrismaModule,
     UsersModule,
-    AuthModule,
     DevicesModule,
     SalesModule,
     OffersModule,
@@ -48,6 +47,14 @@ import { ZoneTypesModule } from './api/zone-types/zone-types.module';
     ZoneTypesModule,
   ],
   controllers: [AppController, GraphicsController, ZonesController],
-  providers: [AppService, GraphicsService, ZonesService],
+  providers: [
+    AppService,
+    GraphicsService,
+    ZonesService,
+    {
+      provide: APP_GUARD,
+      useClass: GatewayRolesGuard,
+    },
+  ],
 })
 export class AppModule {}
