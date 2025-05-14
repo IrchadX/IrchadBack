@@ -15,8 +15,8 @@ model alert {
   date          DateTime        @db.Date
   zone          String
   status        String
+  level         level_new
   device_id     Int?
-  level         level_new?
   device        device?         @relation(fields: [device_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_device")
   panne_history panne_history[]
 }
@@ -32,8 +32,7 @@ model device {
   comm_state       Boolean
   connection_state Boolean?           @default(true)
   battery_capacity Int                @default(0)
-  price            Float?             @db.Real
-  price            Float?             @db.Real
+  price            Float?             @default(0) @db.Real
   alert            alert[]
   state_type       state_type         @relation(fields: [state_type_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
   device_type      device_type        @relation(fields: [type_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
@@ -47,15 +46,12 @@ model device_type {
   device device[]
 }
 
-/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
-/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
 model emergency_contact {
   id     BigInt  @id @default(autoincrement())
   label  String? @db.VarChar
   number String? @db.VarChar
 }
 
-/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
 model env_delimiter {
   id          Int          @id @default(autoincrement())
   created_at  DateTime     @default(now()) @db.Timestamptz(6)
@@ -65,7 +61,6 @@ model env_delimiter {
   environment environment? @relation(fields: [env_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
 }
 
-/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
 model env_user {
   id          Int          @id @default(autoincrement())
   user_id     Int
@@ -74,8 +69,6 @@ model env_user {
   user        user         @relation(fields: [user_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
 }
 
-/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
-/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
 model environment {
   id            Int             @id @default(autoincrement())
   name          String          @db.VarChar
@@ -85,7 +78,7 @@ model environment {
   updated_at    DateTime?       @db.Timestamp(6)
   map_id        Int?
   is_public     Boolean?        @default(false)
-  surface       Float?          @db.Real
+  surface       Float?          @default(0) @db.Real
   env_delimiter env_delimiter[]
   env_user      env_user[]
   map           map?            @relation(fields: [map_id], references: [id], onDelete: Cascade)
@@ -93,14 +86,12 @@ model environment {
   zone          zone[]
 }
 
-/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
 model format {
   id     Int    @id @default(autoincrement())
   format String @db.VarChar
   map    map[]
 }
 
-/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
 model helper_user {
   id                               Int     @id @default(autoincrement())
   user_id                          Int?
@@ -110,7 +101,6 @@ model helper_user {
   user_helper_user_user_idTouser   user?   @relation("helper_user_user_idTouser", fields: [user_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
 }
 
-/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
 model intervention_history {
   id               Int                @id @default(autoincrement())
   device_id        Int?
@@ -120,10 +110,19 @@ model intervention_history {
   description      String?
   status           String?
   type             intervention_type?
+  title            String?
+  location         String?
   user             user?              @relation(fields: [maintenancier_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
 }
 
-/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model localisation {
+  id        Int    @id @default(autoincrement())
+  longitude String
+  latitude  String
+  userId    Int    @unique
+  user      user   @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
 model map {
   id          Int           @id @default(autoincrement())
   created_at  DateTime      @default(now()) @db.Timestamptz(6)
@@ -134,20 +133,12 @@ model map {
   zone        zone[]
 }
 
-model notification_token {
-  id      Int    @id @default(autoincrement())
-  user_id Int    @unique
-  token   String @db.VarChar
-  user    user   @relation(fields: [user_id], references: [id], onDelete: Cascade)
-}
-
 model panne_history {
   id       Int    @id @default(autoincrement())
   alert_id Int?
   alert    alert? @relation(fields: [alert_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
 }
 
-/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
 model poi {
   id           Int           @id @default(autoincrement())
   created_at   DateTime      @default(now()) @db.Timestamptz(6)
@@ -164,14 +155,12 @@ model poi {
   poi_zone     poi_zone[]
 }
 
-/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
 model poi_category {
   id       Int    @id @default(autoincrement())
   category String @db.VarChar
   poi      poi[]
 }
 
-/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
 model poi_zone {
   id         Int      @id @default(autoincrement())
   created_at DateTime @default(now()) @db.Timestamptz(6)
@@ -184,29 +173,26 @@ model poi_zone {
 /// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
 model pricing {
   id        Int     @id @default(autoincrement())
-  attribute String? @unique @db.VarChar
-  price     Float?  @db.Real
+  attribute String? @unique
+  price     Float?
 }
 
-/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
-/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
 model purchase_history {
   id        Int      @id @default(autoincrement())
   date      DateTime @default(now()) @db.Timestamptz(6)
   user_id   Int?
   device_id Int?
-  public    Boolean  @default(false)
+  public    Boolean? @default(false)
   device    device?  @relation(fields: [device_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
   user      user?    @relation(fields: [user_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
 }
 
 model state_type {
   id     Int      @id @default(autoincrement())
-  state  String?  @db.VarChar
+  state  String   @unique
   device device[]
 }
 
-/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
 model user {
   id                                      Int                    @id @default(autoincrement())
   created_at                              DateTime               @default(now()) @db.Timestamptz(6)
@@ -226,7 +212,7 @@ model user {
   helper_user_helper_user_helper_idTouser helper_user[]          @relation("helper_user_helper_idTouser")
   helper_user_helper_user_user_idTouser   helper_user[]          @relation("helper_user_user_idTouser")
   intervention_history                    intervention_history[]
-  notification_token                      notification_token?
+  localisation                            localisation?
   purchase_history                        purchase_history[]
   user_type                               user_type?             @relation(fields: [userTypeId], references: [id], onDelete: Cascade)
 }
@@ -238,36 +224,37 @@ model user_type {
   user       user[]
 }
 
-/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
 model zone {
-  id          Int          @id @default(autoincrement())
-  created_at  DateTime     @default(now()) @db.Timestamptz(6)
-  env_id      Int?
-  name        String?      @db.VarChar
-  description String?      @db.VarChar
-  type_id     Int?
-  coordinates Json?        @db.Json
-  updated_at  DateTime?    @db.Timestamp(6)
-  map_id      Int?
-  poi_zone    poi_zone[]
-  environment environment? @relation(fields: [env_id], references: [id], onDelete: Cascade)
-  map         map?         @relation(fields: [map_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
-  zone_type   zone_type?   @relation(fields: [type_id], references: [id])
-  zone_type   zone_type?   @relation(fields: [type_id], references: [id])
+  id                                  Int          @id @default(autoincrement())
+  created_at                          DateTime     @default(now()) @db.Timestamptz(6)
+  env_id                              Int?
+  name                                String?      @db.VarChar
+  description                         String?      @db.VarChar
+  type_id                             Int?
+  coordinates                         Json?        @db.Json
+  updated_at                          DateTime?    @db.Timestamp(6)
+  map_id                              Int?
+  zone_type                           Int?
+  poi_zone                            poi_zone[]
+  environment                         environment? @relation(fields: [env_id], references: [id], onDelete: Cascade)
+  map                                 map?         @relation(fields: [map_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  zone_type_zone_type_idTozone_type   zone_type?   @relation("zone_type_idTozone_type", fields: [type_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  zone_type_zone_zone_typeTozone_type zone_type?   @relation("zone_zone_typeTozone_type", fields: [zone_type], references: [id], onDelete: Cascade)
 }
 
 /// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
 model zone_type {
-  id          Int      @id @unique @default(autoincrement())
-  created_at  DateTime @default(now()) @db.Timestamptz(6)
-  type        String?
-  color       String?
-  icon        String?
-  name        String?
-  description String?
-  priority    String?
-  accessible  Boolean?
-  zone        zone[]
+  id                             Int      @id @default(autoincrement())
+  created_at                     DateTime @default(now()) @db.Timestamptz(6)
+  type                           String?  @db.VarChar
+  color                          String?  @db.VarChar
+  icon                           String?  @db.VarChar
+  name                           String?
+  description                    String?
+  priority                       String?  @db.VarChar
+  accessible                     Boolean?
+  zone_zone_type_idTozone_type   zone[]   @relation("zone_type_idTozone_type")
+  zone_zone_zone_typeTozone_type zone[]   @relation("zone_zone_typeTozone_type")
 }
 
 enum intervention_type {
@@ -275,26 +262,13 @@ enum intervention_type {
   Non_technique @map("Non technique")
 }
 
-enum level {
-  mod_r_   @map("modéré")
+enum level_new {
   critique
-  mineur
   modere
-}
-
-enum state_enum {
-  en_service
-  defectueux
-  en_maintenance
+  mineur
 }
 
 enum type {
   technique
   Non_technique @map("Non technique")
-}
-
-enum level_new {
-  mineur
-  modere
-  critique
 }

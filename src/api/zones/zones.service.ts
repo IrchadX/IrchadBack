@@ -24,12 +24,7 @@ export class ZonesService {
         env_id: intId,
       },
       include: {
-        zone_type: {
-          select: {
-            color: true,
-            type: true,
-          },
-        },
+        zone_type_zone_zone_typeTozone_type: true,
       },
     });
   }
@@ -37,12 +32,7 @@ export class ZonesService {
   async findAll() {
     return this.prisma.zone.findMany({
       include: {
-        zone_type: {
-          select: {
-            type: true,
-            color: true,
-          },
-        },
+        zone_type_zone_zone_typeTozone_type: true,
       },
     });
   }
@@ -51,12 +41,7 @@ export class ZonesService {
     return this.prisma.zone.findUnique({
       where: { id },
       include: {
-        zone_type: {
-          select: {
-            type: true,
-            color: true,
-          },
-        },
+        zone_type_zone_zone_typeTozone_type: true,
       },
     });
   }
