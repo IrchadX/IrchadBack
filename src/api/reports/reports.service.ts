@@ -15,14 +15,19 @@ export class ReportsService {
       lte: new Date(filter.endDate),
     };
   }
-  async getPannesByDeviceType(year: number): Promise<any> {
-    // Créer la plage de dates pour l'année spécifiée
+
+  async getPannesByDeviceType(year: number): Promise<
+    Array<{
+      deviceType: string;
+      percentage: string;
+      count: number;
+    }>
+  > {
     const startDate = new Date(`${year}-01-01T00:00:00.000Z`);
     const endDate = new Date(`${year + 1}-01-01T00:00:00.000Z`);
 
     const pannes = await this.prisma.panne_history.findMany({
       where: {
-        // Ajouter la condition pour filtrer par année
         alert: {
           date: {
             gte: startDate,
@@ -43,33 +48,21 @@ export class ReportsService {
       },
     });
 
-    console.log(
-      `Récupération des pannes pour l'année ${year}: ${pannes.length} résultats`,
+    const panneStats: Record<string, number> = pannes.reduce(
+      (acc, panne) => {
+        const deviceType = panne.alert?.device?.device_type?.type || 'Unknown';
+        acc[deviceType] = (acc[deviceType] || 0) + 1;
+        return acc;
+      },
+      {} as Record<string, number>,
     );
 
-    const panneStats = pannes.reduce((acc, panne) => {
-      const deviceType = panne.alert?.device?.device_type?.type;
-
-      if (deviceType) {
-        if (!acc[deviceType]) {
-          acc[deviceType] = 1;
-        } else {
-          acc[deviceType]++;
-        }
-      }
-      return acc;
-    }, {});
-
     const totalPannes = pannes.length;
-    const pannePercentages = Object.keys(panneStats).map((type) => {
-      return {
-        deviceType: type,
-        percentage: ((panneStats[type] / totalPannes) * 100).toFixed(2),
-        count: panneStats[type],
-      };
-    });
-
-    return pannePercentages;
+    return Object.entries(panneStats).map(([deviceType, count]) => ({
+      deviceType,
+      percentage: ((count / totalPannes) * 100).toFixed(2),
+      count,
+    }));
   }
 
   async getFleetStatusReport(filter: ReportFilterDto) {
@@ -110,14 +103,18 @@ export class ReportsService {
     };
   }
 
-  async getAlertLevelsReport(year: number): Promise<any> {
-    // Créer la plage de dates pour l'année spécifiée
+  async getAlertLevelsReport(year: number): Promise<
+    Array<{
+      level: string;
+      percentage: string;
+      count: number;
+    }>
+  > {
     const startDate = new Date(`${year}-01-01T00:00:00.000Z`);
     const endDate = new Date(`${year + 1}-01-01T00:00:00.000Z`);
 
     const pannes = await this.prisma.panne_history.findMany({
       where: {
-        // Ajouter la condition pour filtrer par année
         alert: {
           date: {
             gte: startDate,
@@ -138,37 +135,30 @@ export class ReportsService {
       },
     });
 
-    console.log(
-      `Récupération des alertes pour l'année ${year}: ${pannes.length} résultats`,
+    const alertStats: Record<string, number> = pannes.reduce(
+      (acc, panne) => {
+        const alertLevel = panne.alert?.level || 'Unknown';
+        acc[alertLevel] = (acc[alertLevel] || 0) + 1;
+        return acc;
+      },
+      {} as Record<string, number>,
     );
 
-    const alertStats = pannes.reduce((acc, panne) => {
-      const alertLevel = panne.alert?.level;
-
-      if (alertLevel) {
-        if (!acc[alertLevel]) {
-          acc[alertLevel] = 1;
-        } else {
-          acc[alertLevel]++;
-        }
-      }
-      return acc;
-    }, {});
-
     const totalPannes = pannes.length;
-    const alertLevelPercentages = Object.keys(alertStats).map((level) => {
-      return {
-        level,
-        percentage: ((alertStats[level] / totalPannes) * 100).toFixed(2),
-        count: alertStats[level],
-      };
-    });
-
-    return alertLevelPercentages;
+    return Object.entries(alertStats).map(([level, count]) => ({
+      level,
+      percentage: ((count / totalPannes) * 100).toFixed(2),
+      count,
+    }));
   }
 
-  async getDevicesByType(year: number): Promise<any> {
-    console.log('Année récupérée:', year);
+  async getDevicesByType(year: number): Promise<
+    Array<{
+      deviceType: string;
+      count: number;
+      percentage: string;
+    }>
+  > {
     const devices = await this.prisma.device.findMany({
       where: {
         date_of_service: {
@@ -181,33 +171,27 @@ export class ReportsService {
       },
     });
 
-    const typeStats = devices.reduce(
+    const typeStats: Record<string, number> = devices.reduce(
       (acc, device) => {
-        const type = device.device_type?.type || 'Inconnu';
-
-        if (!acc[type]) {
-          acc[type] = 1;
-        } else {
-          acc[type]++;
-        }
-
+        const type = device.device_type?.type || 'Unknown';
+        acc[type] = (acc[type] || 0) + 1;
         return acc;
       },
       {} as Record<string, number>,
     );
 
     const total = devices.length;
-
-    const typePercentages = Object.entries(typeStats).map(([type, count]) => ({
-      deviceType: type,
+    return Object.entries(typeStats).map(([deviceType, count]) => ({
+      deviceType,
       count,
       percentage: ((count / total) * 100).toFixed(2),
     }));
-
-    return typePercentages;
   }
 
-  async getAverageMaintenanceDuration(year: number): Promise<any> {
+  async getAverageMaintenanceDuration(year: number): Promise<{
+    averageDurationDays: string;
+    count: number;
+  }> {
     const interventions = await this.prisma.intervention_history.findMany({
       where: {
         completion_date: {
@@ -218,23 +202,22 @@ export class ReportsService {
     });
 
     if (interventions.length === 0) {
-      return { averageDurationDays: 0, count: 0 };
+      return { averageDurationDays: '0.00', count: 0 };
     }
 
     const totalDurationMs = interventions.reduce((acc, intervention) => {
       const { scheduled_date, completion_date } = intervention;
-
       if (!scheduled_date || !completion_date) return acc;
-
-      const start = new Date(scheduled_date).getTime();
-      const end = new Date(completion_date).getTime();
-      const duration = end - start;
-      return acc + duration;
+      return (
+        acc +
+        (new Date(completion_date).getTime() -
+          new Date(scheduled_date).getTime())
+      );
     }, 0);
 
-    const averageDurationMs = totalDurationMs / interventions.length;
     const averageDurationDays = (
-      averageDurationMs /
+      totalDurationMs /
+      interventions.length /
       (1000 * 60 * 60 * 24)
     ).toFixed(2);
 
