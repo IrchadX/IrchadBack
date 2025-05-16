@@ -58,6 +58,7 @@ model env_delimiter {
   updated_at  DateTime? @db.Timestamp(6)
   env_id      Int?
   coordinates Json?     @db.Json
+  environment environment? @relation(fields: [env_id], references: [id])
 }
 
 model env_user {
