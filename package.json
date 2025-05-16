@@ -13,7 +13,7 @@
     "seed": "ts-node prisma/zones-seed.ts",
     "prebuild": "prisma generate",
     "build": "nest build",
-    "start:prod": "node dist/src/main",
+    "start:prod": " prisma generate && node dist/src/main",
     "prisma:generate": "prisma generate",
     "postbuild": "prisma generate",
     "format": "prettier --write \"src/**/*.ts\" \"test/**/*.ts\"",
