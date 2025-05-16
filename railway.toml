@@ -1,0 +1,6 @@
+[build]
+builder = "nixpacks"
+nixpacksBuildCommand = "npm run build"
+
+[deploy]
+startCommand = "npm run start:prod"
