@@ -10,23 +10,25 @@ export class ZonesService {
 
     const centers = polygons
       .map((poly) => {
-        const coordinates = poly.coordinates?.[0]; // le contour principal
-        if (!coordinates || coordinates.length === 0) return null;
+        const data = poly.coordinates as { points: { x: number; y: number }[] };
+        const points = data?.points;
 
-        let latSum = 0;
-        let lonSum = 0;
+        if (!points || points.length === 0) return null;
 
-        coordinates.forEach(([lon, lat]) => {
-          latSum += lat;
-          lonSum += lon;
+        let xSum = 0;
+        let ySum = 0;
+
+        points.forEach(({ x, y }) => {
+          xSum += x;
+          ySum += y;
         });
 
         return {
-          latitude: latSum / coordinates.length,
-          longitude: lonSum / coordinates.length,
+          latitude: ySum / points.length,   // y = latitude
+          longitude: xSum / points.length,  // x = longitude
         };
       })
-      .filter((center): center is { latitude: number; longitude: number } => center !== null); // <-- typage correct ici
+      .filter((center): center is { latitude: number; longitude: number } => center !== null);
 
     return centers;
   }

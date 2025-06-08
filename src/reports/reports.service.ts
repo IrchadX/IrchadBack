@@ -231,14 +231,12 @@ export class ReportsService {
       count: interventions.length,
     };
   }
-
   async generateFleetStatusPDF(filter: ReportFilterDto, year: number): Promise<Buffer> {
     const fleetStatusData = await this.getFleetStatusReport(filter);
     const pannePercentages = await this.getPannesByDeviceType(year);
     const alertLevelsData = await this.getAlertLevelsReport(year);
     const deviceTypeStats = await this.getDevicesByType(year);
     const averageMaintenance = await this.getAverageMaintenanceDuration(year);
-
     const docDefinition = {
       content: [
         { text: 'Rapport de dispositifs', style: 'header' },

@@ -68,7 +68,8 @@ async getDeviceCount(): Promise<number> {
       WHERE status = 'completed'
     `;
 
-    return result[0]?.avg_duration ?? null;
+      const avg = result[0]?.avg_duration;
+  return avg !== undefined ? parseFloat(avg.toFixed(2)) : null;
   }
 
   async getAllAlerts(): Promise<alert[]> {
