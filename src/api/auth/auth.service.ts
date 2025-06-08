@@ -68,6 +68,7 @@ export class AuthService {
     res.clearCookie('access_token');
     return { message: 'Logged out successfully' };
   }
+  
   async validateUser(email: string, pass: string): Promise<any> {
     const user = await this.prisma.user.findUnique({
       where: { email },

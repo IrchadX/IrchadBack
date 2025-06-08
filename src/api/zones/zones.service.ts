@@ -2,6 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { CreateZoneDto } from './dto/create-zone.dto';
 import { UpdateZoneDto } from './dto/update-zone.dto';
+import { color } from 'd3-color';
 @Injectable()
 export class ZonesService {
   constructor(private readonly prisma: PrismaService) {}
@@ -23,7 +24,17 @@ export class ZonesService {
         env_id: intId,
       },
       include: {
-        zone_type_zone_zone_typeTozone_type: true,
+        zone_type_zone_type_idTozone_type: {
+          select: {
+            type: true,
+            color: true,
+            name: true,
+            icon: true,
+            description: true,
+            priority: true,
+            accessible: true,
+          },
+        },
       },
     });
   }
@@ -40,7 +51,17 @@ export class ZonesService {
     return this.prisma.zone.findUnique({
       where: { id },
       include: {
-        zone_type_zone_zone_typeTozone_type: true,
+        zone_type_zone_zone_typeTozone_type: {
+          select: {
+            type: true,
+            color: true,
+            name: true,
+            icon: true,
+            description: true,
+            priority: true,
+            accessible: true,
+          },
+        },
       },
     });
   }

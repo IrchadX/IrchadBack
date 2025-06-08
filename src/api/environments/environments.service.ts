@@ -668,14 +668,18 @@ export class EnvironmentsService {
 
     return environments;
   }
-  // returns one environment whose id is 'id'
+  // Updated getOne method with zone type includes
   async getOne(id: string) {
     const envId = Number(id);
 
     const environment = await this.prisma.environment.findUnique({
       where: { id: envId },
       include: {
-        zone: true,
+        zone: {
+          include: {
+            zone_type_zone_type_idTozone_type: true,
+          },
+        },
         poi: true,
         env_user: true,
       },
@@ -691,7 +695,6 @@ export class EnvironmentsService {
       pois: environment.poi,
     };
   }
-
   // deletes te environment whose id is 'id'
   async delete(id: string) {
     const envId = Number(id);
