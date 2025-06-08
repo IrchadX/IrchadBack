@@ -153,6 +153,8 @@ async function main() {
     },
   ];
 
+  await prisma.zone_type.deleteMany({});
+
   await prisma.zone_type.createMany({
     data: zoneTypes,
     skipDuplicates: true,

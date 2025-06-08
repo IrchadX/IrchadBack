@@ -31,6 +31,8 @@ async function main() {
     'Machine à café',
   ];
 
+  await prisma.poi_category.deleteMany({});
+
   await prisma.poi_category.createMany({
     data: categories.map((category) => ({ category })),
     skipDuplicates: true, // avoids duplicates on category name

@@ -10,6 +10,9 @@
     "npm": ">=9.0.0"
   },
   "scripts": {
+    "seed:zone-types": "ts-node ./prisma/zones-seed.ts",
+    "seed:poi-categories": "ts-node ./prisma/categories-seed.ts",
+    "seed:all": "npm run seed:zone-types && npm run seed:poi-categories",
     "seed": "ts-node prisma/zones-seed.ts",
     "prebuild": "prisma generate",
     "build": "npx prisma generate && nest build",
