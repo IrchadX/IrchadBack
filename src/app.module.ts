@@ -24,6 +24,7 @@ import { DataAnalysisModule } from './data_analysis/data_analysis.module';
 import { ProfilModule } from './api/profil/profil.module';
 import { PoiCategoriesModule } from './api/poi-categories/poi-categories.module';
 import { ZoneTypesModule } from './api/zone-types/zone-types.module';
+import { AuthModule } from './api/auth/auth.module';
 @Module({
   imports: [
     ConfigModule.forRoot({
@@ -45,6 +46,7 @@ import { ZoneTypesModule } from './api/zone-types/zone-types.module';
     ProfilModule,
     PoiCategoriesModule,
     ZoneTypesModule,
+    AuthModule,
   ],
   controllers: [AppController, GraphicsController, ZonesController],
   providers: [

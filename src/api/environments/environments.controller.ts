@@ -21,8 +21,8 @@ import { FiltersDto } from './dto/filter.dto';
 import { GatewayRolesGuard } from '@/decorators/gateway-roles.decorator';
 import { GatewayRoles } from '@/guards/gateway-roles.guard';
 
-@UseGuards(GatewayRolesGuard)
-@GatewayRoles('admin')
+// @UseGuards(GatewayRolesGuard)
+// @GatewayRoles('admin')
 @Controller('environments')
 export class EnvironmentsController {
   constructor(private readonly environmentsService: EnvironmentsService) {}
