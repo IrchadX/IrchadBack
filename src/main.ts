@@ -13,6 +13,7 @@ async function bootstrap() {
   // Enable CORS
   app.enableCors({
     origin: [
+      'https://apigateway-production-f7c1.up.railway.app/',
       'http://localhost:3001',
       'http://localhost:3000',
       'http://localhost:3002',
@@ -30,7 +31,7 @@ async function bootstrap() {
       whitelist: true,
     }),
   );
-
-  await app.listen(3001);
+  const port = process.env.PORT || 8080;
+  await app.listen(port, '0.0.0.0');
 }
 bootstrap();

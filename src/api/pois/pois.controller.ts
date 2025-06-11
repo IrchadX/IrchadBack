@@ -10,13 +10,7 @@ import {
 import { PoisService } from './pois.service';
 import { CreatePoiDto } from './dto/create-poi.dto';
 import { UpdatePoiDto } from './dto/update-poi.dto';
-import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
-import { RolesGuard } from '../auth/guards/roles.guard';
-import { Roles } from '../auth/decorators/roles.decorator';
-import { UseGuards } from '@nestjs/common';
 
-@UseGuards(JwtAuthGuard, RolesGuard)
-@Roles('admin', 'super_admin')
 @Controller('pois')
 export class PoisController {
   constructor(private readonly poisService: PoisService) {}

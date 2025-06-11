@@ -17,13 +17,8 @@ import {
 import { CreateDeviceDto } from './dto/CreateDevice.dto';
 import { UpdateDeviceDto } from './dto/UpdateDevice.dto';
 import { DeviceService } from './device.service';
-import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
-import { RolesGuard } from '../auth/guards/roles.guard';
-import { Roles } from '../auth/decorators/roles.decorator';
 import { UseGuards } from '@nestjs/common';
 
-@UseGuards(JwtAuthGuard, RolesGuard)
-@Roles('commercial', 'admin', 'super_admin')
 @Controller('devices')
 export class DevicesController {
   constructor(private service: DeviceService) {}

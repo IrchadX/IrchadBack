@@ -18,12 +18,11 @@ import { CreateEnvironmentDto } from './dto/create-environment.dto';
 import { UpdateEnvironmentDto } from './dto/update-environment.dto';
 import { CreateBasicEnvironmentDto } from './dto/create-basic-environment.dto';
 import { FiltersDto } from './dto/filter.dto';
-import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
-import { RolesGuard } from '../auth/guards/roles.guard';
-import { Roles } from '../auth/decorators/roles.decorator';
+import { GatewayRolesGuard } from '@/decorators/gateway-roles.decorator';
+import { GatewayRoles } from '@/guards/gateway-roles.guard';
 
-@UseGuards(JwtAuthGuard, RolesGuard)
-@Roles('super_admin', 'admin', 'commercial')
+// @UseGuards(GatewayRolesGuard)
+// @GatewayRoles('admin')
 @Controller('environments')
 export class EnvironmentsController {
   constructor(private readonly environmentsService: EnvironmentsService) {}

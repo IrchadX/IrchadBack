@@ -1,6 +1,6 @@
 import { Injectable, UnauthorizedException } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
-import { PrismaService } from '@/prisma/prisma.service';
+import { PrismaService } from 'src/prisma/prisma.service';
 import { LoginDto } from './dto/login.dto';
 import * as bcrypt from 'bcrypt';
 import { Response } from 'express';
@@ -45,9 +45,9 @@ export class AuthService {
 
     res.cookie('access_token', token, {
       httpOnly: true,
-      secure: process.env.NODE_ENV === 'production', // HTTPS only in production
-      sameSite: 'strict', // Prevent CSRF attacks
-      maxAge: 24 * 60 * 60 * 1000, // 1 day expiry
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'strict',
+      maxAge: 24 * 60 * 60 * 1000,
       path: '/',
     });
 
@@ -67,5 +67,23 @@ export class AuthService {
     // Clear the HTTP-only cookie
     res.clearCookie('access_token');
     return { message: 'Logged out successfully' };
+  }
+  async validateUser(email: string, pass: string): Promise<any> {
+    const user = await this.prisma.user.findUnique({
+      where: { email },
+      include: { user_type: true },
+    });
+
+    if (!user) throw new UnauthorizedException('Invalid credentials');
+
+    // In production, use bcrypt.compare()
+    const isMatch = pass === user.password;
+    if (!isMatch) throw new UnauthorizedException('Invalid credentials');
+
+    return {
+      userId: user.id,
+      email: user.email,
+      role: user.user_type?.type,
+    };
   }
 }

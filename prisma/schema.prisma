@@ -53,12 +53,12 @@ model emergency_contact {
 }
 
 model env_delimiter {
-  id          Int          @id @default(autoincrement())
-  created_at  DateTime     @default(now()) @db.Timestamptz(6)
-  updated_at  DateTime?    @db.Timestamp(6)
+  id          Int       @id @default(autoincrement())
+  created_at  DateTime  @default(now()) @db.Timestamptz(6)
+  updated_at  DateTime? @db.Timestamp(6)
   env_id      Int?
-  coordinates Json?        @db.Json
-  environment environment? @relation(fields: [env_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  coordinates Json?     @db.Json
+  environment environment? @relation(fields: [env_id], references: [id])
 }
 
 model env_user {

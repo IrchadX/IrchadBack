@@ -10,13 +10,8 @@ import {
 } from '@nestjs/common';
 import { OffersService } from './offers.service';
 import { ParseIntPipe } from '@nestjs/common';
-import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
-import { RolesGuard } from '../auth/guards/roles.guard';
-import { Roles } from '../auth/decorators/roles.decorator';
 
-@UseGuards(JwtAuthGuard, RolesGuard)
-@Roles('commercial')
-@Controller('offers')
+@Controller()
 export class OffersController {
   constructor(private readonly offersService: OffersService) {}
 
@@ -73,8 +68,10 @@ export class OffersController {
     }
   }
 
-  @Get ('user-public-access/:userId')
-  async getUserPublicEnvironments(@Param('userId', ParseIntPipe) userId: number) {
+  @Get('user-public-access/:userId')
+  async getUserPublicEnvironments(
+    @Param('userId', ParseIntPipe) userId: number,
+  ) {
     try {
       return await this.offersService.getUserAccess(userId);
     } catch (error) {
