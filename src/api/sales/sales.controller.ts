@@ -1,5 +1,5 @@
 import { Controller, UseGuards, Get, Post, Body, Query } from '@nestjs/common';
-import { SalesService } from './sales.service';
+import { SalesService, MarketPenetrationData } from './sales.service';
 
 @Controller('sales')
 export class SalesController {
@@ -61,5 +61,54 @@ export class SalesController {
   @Get('sales-by-region')
   async getSalesCountByRegion() {
     return this.salesService.getSalesCountByRegion();
+  }
+
+  @Get('cogs')
+  async getCOGS(@Query('date') date: string) {
+    const parsedDate = new Date(date);
+    if (isNaN(parsedDate.getTime())) {
+      throw new Error('Invalid date format');
+    }
+    return this.salesService.getCOGS(parsedDate);
+  }
+
+  @Get('expenses')
+  async getExpenses(@Query('date') date: string) {
+    const parsedDate = new Date(date);
+    if (isNaN(parsedDate.getTime())) {
+      throw new Error('Invalid date format');
+    }
+    return this.salesService.getExpenses(parsedDate);
+  }
+
+  @Get('gross-margin')
+  async getGrossMargin(@Query('date') date: string) {
+    const parsedDate = new Date(date);
+    if (isNaN(parsedDate.getTime())) {
+      throw new Error('Invalid date format');
+    }
+    return this.salesService.calculateGrossMargin(parsedDate);
+  }
+
+  @Get('net-margin')
+  async getNetMargin(@Query('date') date: string) {
+    const parsedDate = new Date(date);
+    if (isNaN(parsedDate.getTime())) {
+      throw new Error('Invalid date format');
+    }
+    return this.salesService.calculateNetMargin(parsedDate);
+  }
+
+  @Get('market-penetration')
+  async getMarketPenetration(@Query('date') date: string): Promise<MarketPenetrationData[]> {
+    try {
+      const parsedDate = new Date(date);
+      if (isNaN(parsedDate.getTime())) {
+        throw new Error('Invalid date format. Please use YYYY-MM-DD format.');
+      }
+      return this.salesService.getMarketPenetrationByRegion(parsedDate);
+    } catch (error) {
+      throw new Error(`Failed to get market penetration data: ${error.message}`);
+    }
   }
 }

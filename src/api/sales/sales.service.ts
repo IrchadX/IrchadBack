@@ -1,5 +1,12 @@
 import { Injectable } from '@nestjs/common';
-import { PrismaService } from '../../prisma/prisma.service';
+import { PrismaService } from 'src/prisma/prisma.service';
+
+export interface MarketPenetrationData {
+  region: string;
+  penetration: number;
+  totalCustomers: number;
+  potentialMarket: number;
+}
 
 @Injectable()
 export class SalesService {
@@ -310,5 +317,151 @@ async getSalesCountByDeviceType() {
     .filter(entry => entry.sales > 0); 
 
   return salesByRegion;
+}
+
+async getCOGS(month: Date) {
+  const startOfMonth = new Date(month.getFullYear(), month.getMonth(), 1);
+  const startOfNextMonth = new Date(month.getFullYear(), month.getMonth() + 1, 1);
+
+  const expenses = await this.prisma.expense.findMany({
+    where: {
+      date: {
+        gte: startOfMonth,
+        lt: startOfNextMonth,
+      },
+      category: 'COGS',
+    },
+    select: {
+      amount: true,
+    },
+  });
+
+  return expenses.reduce((sum, expense) => sum + expense.amount, 0);
+}
+
+async getExpenses(month: Date) {
+  const startOfMonth = new Date(month.getFullYear(), month.getMonth(), 1);
+  const startOfNextMonth = new Date(month.getFullYear(), month.getMonth() + 1, 1);
+
+  const expenses = await this.prisma.expense.findMany({
+    where: {
+      date: {
+        gte: startOfMonth,
+        lt: startOfNextMonth,
+      },
+      category: {
+        not: 'COGS',
+      },
+    },
+    select: {
+      amount: true,
+    },
+  });
+
+  return expenses.reduce((sum, expense) => sum + expense.amount, 0);
+}
+
+async calculateGrossMargin(month: Date) {
+  const [revenue, cogs] = await Promise.all([
+    this.getMonthlyRevenue(month),
+    this.getCOGS(month),
+  ]);
+
+  return {
+    revenue: revenue.totalRevenue,
+    cogs,
+    grossMargin: revenue.totalRevenue - cogs,
+  };
+}
+
+async calculateNetMargin(month: Date) {
+  const [grossMarginData, expenses] = await Promise.all([
+    this.calculateGrossMargin(month),
+    this.getExpenses(month),
+  ]);
+
+  const netProfit = grossMarginData.grossMargin - expenses;
+  const netMarginPercentage = (netProfit / grossMarginData.revenue) * 100;
+
+  return {
+    revenue: grossMarginData.revenue,
+    cogs: grossMarginData.cogs,
+    grossMargin: grossMarginData.grossMargin,
+    expenses,
+    netProfit,
+    netMarginPercentage,
+  };
+}
+
+async getMarketPenetrationByRegion(month: Date): Promise<MarketPenetrationData[]> {
+  const startOfMonth = new Date(month.getFullYear(), month.getMonth(), 1);
+  const endOfMonth = new Date(month.getFullYear(), month.getMonth() + 1, 0);
+
+  // Récupérer les ventes par ville pour le mois donné
+  const salesByCity = await this.prisma.purchase_history.groupBy({
+    by: ['user_id'],
+    where: {
+      date: {
+        gte: startOfMonth,
+        lte: endOfMonth
+      }
+    },
+    _count: {
+      _all: true
+    }
+  });
+
+  // Récupérer les villes des utilisateurs
+  const userIds = salesByCity.map(sale => sale.user_id).filter((id): id is number => id !== null);
+  const users = await this.prisma.user.findMany({
+    where: {
+      id: {
+        in: userIds
+      }
+    },
+    select: {
+      id: true,
+      city: true
+    }
+  });
+
+  // Récupérer les données de marché potentiel
+  const marketPotentials = await this.prisma.market_potentiel.findMany({
+    select: {
+      city: true,
+      potential_value: true
+    }
+  });
+
+  // Créer un map des ventes par ville
+  const salesByCityMap = new Map<string, number>();
+  users.forEach(user => {
+    if (user.city) {
+      const currentSales = salesByCityMap.get(user.city) || 0;
+      const userSales = salesByCity.find(sale => sale.user_id === user.id)?._count._all || 0;
+      salesByCityMap.set(user.city, currentSales + userSales);
+    }
+  });
+
+  // Créer un map des marchés potentiels par ville
+  const potentialMarketMap = new Map(
+    marketPotentials.map(mp => [
+      mp.city,
+      mp.potential_value ? Number(mp.potential_value) : 1000000
+    ])
+  );
+
+  // Calculer le taux de pénétration pour chaque ville
+  return Array.from(salesByCityMap.entries()).map(([city, totalCustomers]) => {
+    const potentialMarket = potentialMarketMap.get(city) || 1000000; // Valeur par défaut si la ville n'est pas dans la table
+    const penetration = (Number(totalCustomers) / Number(potentialMarket)) * 100;
+
+    return {
+      region: city,
+      penetration: Number(penetration.toFixed(1)),
+      totalCustomers,
+      potentialMarket: Number(potentialMarket)
+    };
+  });
 }
 }
