@@ -1,5 +1,5 @@
 import { Controller, UseGuards, Get, Post, Body, Query } from '@nestjs/common';
-import { SalesService, MarketPenetrationData } from './sales.service';
+import { SalesService, MarketPenetrationData, MonthlyProductsData } from './sales.service';
 
 @Controller('sales')
 export class SalesController {
@@ -109,6 +109,19 @@ export class SalesController {
       return this.salesService.getMarketPenetrationByRegion(parsedDate);
     } catch (error) {
       throw new Error(`Failed to get market penetration data: ${error.message}`);
+    }
+  }
+
+  @Get('monthly-products')
+  async getMonthlyProducts(@Query('date') date: string): Promise<MonthlyProductsData> {
+    try {
+      const parsedDate = new Date(date);
+      if (isNaN(parsedDate.getTime())) {
+        throw new Error('Invalid date format. Please use YYYY-MM-DD format.');
+      }
+      return this.salesService.getMonthlyProductsSold(parsedDate);
+    } catch (error) {
+      throw new Error(`Failed to get monthly products data: ${error.message}`);
     }
   }
 }

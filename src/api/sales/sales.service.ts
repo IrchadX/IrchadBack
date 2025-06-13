@@ -8,6 +8,11 @@ export interface MarketPenetrationData {
   potentialMarket: number;
 }
 
+export interface MonthlyProductsData {
+  totalProducts: number;
+  month: string;
+}
+
 @Injectable()
 export class SalesService {
   constructor(private readonly prisma: PrismaService) {}
@@ -463,5 +468,31 @@ async getMarketPenetrationByRegion(month: Date): Promise<MarketPenetrationData[]
       potentialMarket: Number(potentialMarket)
     };
   });
+}
+
+async getMonthlyProductsSold(month: Date): Promise<MonthlyProductsData> {
+  const startOfMonth = new Date(month.getFullYear(), month.getMonth(), 1);
+  const endOfMonth = new Date(month.getFullYear(), month.getMonth() + 1, 0);
+
+  // Compter le nombre total de produits vendus pour le mois donné
+  const totalProducts = await this.prisma.purchase_history.count({
+    where: {
+      date: {
+        gte: startOfMonth,
+        lte: endOfMonth
+      }
+    }
+  });
+
+  // Formater le mois pour l'affichage
+  const monthString = month.toLocaleDateString('fr-DZ', {
+    month: 'long',
+    year: 'numeric'
+  });
+
+  return {
+    totalProducts,
+    month: monthString
+  };
 }
 }
