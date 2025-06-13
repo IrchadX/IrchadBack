@@ -311,6 +311,4 @@ async getSalesCountByDeviceType() {
 
   return salesByRegion;
 }
-
-
 }
