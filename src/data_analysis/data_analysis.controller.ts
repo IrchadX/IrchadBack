@@ -69,4 +69,21 @@ async predictSales(): Promise<any> {
     });
   });
 }
+ @Get('export-monthly-stats')
+  async exportMonthlyStats(@Res() res: Response) {
+    const filePath = await this.dataAnalysisService.generateMonthlyStatsCSV();
+    if (!filePath) {
+      return res.status(500).send("Erreur lors de la génération du fichier.");
+    }
+    const absoluteFilePath = path.resolve(filePath);
+    res.setHeader('Content-Type', 'text/csv');
+    res.setHeader('Content-Disposition', 'attachment; filename="monthly_stats.csv"');
+
+    res.sendFile(absoluteFilePath, (err) => {
+      if (err) {
+        console.error("Erreur lors du téléchargement du fichier:", err);
+        res.status(500).send("Erreur lors du téléchargement du fichier.");
+      }
+    });
+  }
 }
