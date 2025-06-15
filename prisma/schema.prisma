@@ -58,6 +58,7 @@ model env_delimiter {
   updated_at  DateTime?    @db.Timestamp(6)
   env_id      Int?
   coordinates Json?        @db.Json
+  type        String?
   environment environment? @relation(fields: [env_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
 }
 
@@ -84,6 +85,17 @@ model environment {
   map           map?            @relation(fields: [map_id], references: [id], onDelete: Cascade)
   poi           poi[]
   zone          zone[]
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model expense {
+  id          BigInt           @id @default(autoincrement())
+  created_at  DateTime         @default(now()) @db.Timestamptz(6)
+  label       String?          @db.VarChar
+  amount      Float            @default(0) @db.Real
+  category    ExpenseCategory?
+  description String?
+  date        DateTime?        @db.Date
 }
 
 model format {
@@ -132,6 +144,14 @@ model map {
   format      format?       @relation(fields: [format_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
   poi         poi[]
   zone        zone[]
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model market_potentiel {
+  id              BigInt   @id @default(autoincrement())
+  created_at      DateTime @default(now()) @db.Timestamptz(6)
+  city            String   @unique @db.VarChar
+  potential_value Int?
 }
 
 model panne_history {
@@ -256,6 +276,15 @@ model zone_type {
   accessible                     Boolean?
   zone_zone_type_idTozone_type   zone[]   @relation("zone_type_idTozone_type")
   zone_zone_zone_typeTozone_type zone[]   @relation("zone_zone_typeTozone_type")
+}
+
+enum ExpenseCategory {
+  COGS
+  SALARY
+  MAINTENANCE
+  UTILITIES
+  MARKETING
+  OTHER
 }
 
 enum intervention_type {

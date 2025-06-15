@@ -72,9 +72,16 @@ export class EnvironmentsService {
     const envId = id;
     const userId = Number(properties.environment.userId);
 
-    // Handle environment delimiter
+    // Handle environment delimiter with walls and windows
     const environmentFeature = features.find(
       (f) => f.properties.type === 'environment',
+    );
+
+    // Get walls and windows features
+    const wallFeatures = features.filter((f) => f.properties.type === 'wall');
+
+    const windowFeatures = features.filter(
+      (f) => f.properties.type === 'window',
     );
 
     if (environmentFeature) {
@@ -83,22 +90,36 @@ export class EnvironmentsService {
         where: { env_id: envId },
       });
 
+      // Prepare delimiter data with environment boundary, walls, and windows
+      const delimiterData = {
+        env_id: envId,
+        coordinates: environmentFeature.geometry.coordinates,
+        walls: wallFeatures.map((wall) => ({
+          coordinates: wall.geometry.coordinates,
+          properties: wall.properties,
+        })),
+        windows: windowFeatures.map((window) => ({
+          coordinates: window.geometry.coordinates,
+          properties: window.properties,
+        })),
+      };
+
       if (existingDelimiter) {
         // Update existing delimiter
         await this.prisma.env_delimiter.update({
           where: { id: existingDelimiter.id },
-          data: { coordinates: environmentFeature.geometry.coordinates },
+          data: delimiterData,
         });
       } else {
         // Create new delimiter
         await this.prisma.env_delimiter.create({
-          data: {
-            env_id: envId,
-            coordinates: environmentFeature.geometry.coordinates,
-          },
+          data: delimiterData,
         });
       }
-      console.log('✅ Updated environment delimiter.');
+
+      console.log(
+        `✅ Updated environment delimiter with ${wallFeatures.length} walls and ${windowFeatures.length} windows.`,
+      );
     }
 
     // Check if user association exists, create if needed
@@ -162,6 +183,9 @@ export class EnvironmentsService {
 
     console.log('*** Creating Zones:', zones);
     console.log('*** Creating POIs:', pois);
+    console.log(
+      `*** Processed ${wallFeatures.length} walls and ${windowFeatures.length} windows in delimiter`,
+    );
 
     // Bulk insert zones and POIs
     zones.length > 0 && (await this.prisma.zone.createMany({ data: zones }));
@@ -193,6 +217,8 @@ export class EnvironmentsService {
       }),
       zones: insertedZones,
       pois: insertedPOIs,
+      walls: wallFeatures.length,
+      windows: windowFeatures.length,
     };
   }
 
@@ -387,7 +413,6 @@ export class EnvironmentsService {
 
     return null;
   }
-
   async update(id: string, updateEnvironmentDto: any) {
     console.log('Incoming update data:', updateEnvironmentDto);
     const envId = Number(id);
@@ -446,16 +471,20 @@ export class EnvironmentsService {
       }
     }
 
-    // fetch existing zones and POIs
+    // fetch existing zones, POIs, and delimiters
     const existingZones = await this.prisma.zone.findMany({
       where: { env_id: envId },
     });
     const existingPOIs = await this.prisma.poi.findMany({
       where: { env_id: envId },
     });
+    const existingDelimiters = await this.prisma.env_delimiter.findMany({
+      where: { env_id: envId },
+    });
 
     console.log('📌 Existing Zones:', existingZones);
     console.log('📌 Existing POIs:', existingPOIs);
+    console.log('📌 Existing Delimiters:', existingDelimiters);
 
     const newZones: CreateZoneDto[] = features
       .filter((f) => {
@@ -483,6 +512,7 @@ export class EnvironmentsService {
 
         return zone;
       });
+
     // FIXED: More precise POI filtering
     const newPOIs: CreatePoiDto[] = features
       .filter((f) => {
@@ -498,8 +528,21 @@ export class EnvironmentsService {
         env_id: envId,
       }));
 
+    // NEW: Handle delimiters (wall, window, environment)
+    const newDelimiters = features
+      .filter((f) => {
+        return ['wall', 'window', 'environment'].includes(f.properties.type);
+      })
+      .map((f) => ({
+        id: Number(f.properties.id),
+        type: f.properties.type,
+        coordinates: f.geometry.coordinates,
+        env_id: envId,
+      }));
+
     console.log('📌 New Zones:', newZones);
     console.log('📌 New POIs:', newPOIs);
+    console.log('📌 New Delimiters:', newDelimiters);
 
     // detect changes in coordinates
     console.log('🔍 Detecting changes for Zones...');
@@ -521,6 +564,17 @@ export class EnvironmentsService {
     console.log('➕ Added POIs:', addedPOIs);
     console.log('📝 Updated POIs:', updatedPOIs);
     console.log('❌ Deleted POI IDs:', deletedPOIIds);
+
+    // NEW: Detect changes for delimiters
+    console.log('🔍 Detecting changes for Delimiters...');
+    const {
+      added: addedDelimiters,
+      updated: updatedDelimiters,
+      deletedIds: deletedDelimiterIds,
+    } = this.detectChanges(newDelimiters, existingDelimiters);
+    console.log('➕ Added Delimiters:', addedDelimiters);
+    console.log('📝 Updated Delimiters:', updatedDelimiters);
+    console.log('❌ Deleted Delimiter IDs:', deletedDelimiterIds);
 
     // Apply changes: Zones
     await Promise.all([
@@ -585,12 +639,46 @@ export class EnvironmentsService {
 
     console.log('✅ POIs updated successfully.');
 
+    // NEW: Apply changes: Delimiters
+    await Promise.all([
+      // Handle additions (filter out id if it's 0 or invalid)
+      ...addedDelimiters.map((delimiter) => {
+        const { id, ...delimiterData } = delimiter;
+        return this.prisma.env_delimiter.create({
+          data: {
+            ...delimiterData,
+            env_id: envId,
+          },
+        });
+      }),
+
+      // Handle updates (only for delimiters with valid IDs)
+      ...updatedDelimiters.map((delimiter) => {
+        if (!delimiter.id) {
+          console.warn(
+            `Attempted to update delimiter without ID: ${JSON.stringify(delimiter)}`,
+          );
+          return Promise.resolve(null); // Skip invalid updates
+        }
+        return this.prisma.env_delimiter.update({
+          where: { id: delimiter.id },
+          data: delimiter,
+        });
+      }),
+
+      // Handle deletions
+      deletedDelimiterIds.length > 0
+        ? this.prisma.env_delimiter.deleteMany({
+            where: { id: { in: deletedDelimiterIds.filter((id) => id > 0) } },
+          })
+        : Promise.resolve(null), // Skip if no deletions
+    ]);
+
+    console.log('✅ Delimiters updated successfully.');
+
     return environment;
   }
 
-  /**
-   * Detects added, updated, and deleted elements between the new and existing data.
-   */
   private detectChanges(
     newFeatures: (CreateZoneDto | CreatePoiDto)[],
     existingFeatures: (CreateZoneDto | CreatePoiDto)[],
@@ -735,6 +823,7 @@ export class EnvironmentsService {
         },
         poi: true,
         env_user: true,
+        env_delimiter: true,
       },
     });
 
@@ -746,6 +835,7 @@ export class EnvironmentsService {
       environment,
       zones: environment.zone,
       pois: environment.poi,
+      delimiters: environment.env_delimiter,
     };
   }
   // deletes te environment whose id is 'id'
