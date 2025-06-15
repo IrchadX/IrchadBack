@@ -1,7 +1,10 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import * as createCsvWriter from 'csv-writer'; 
+import * as fs from 'fs';
 import * as path from 'path';
+import { exec } from 'child_process';
+import { promisify } from 'util';
 @Injectable()
 export class DataAnalysisService {
   constructor(private readonly prisma: PrismaService) {} 
@@ -13,7 +16,6 @@ async generateMonthlyStatsCSV(): Promise<string> {
   const endDate = new Date(`${currentYear + 1}-01-01T00:00:00Z`);
 
   const monthLabels = ["Jan", "Fev", "Mar", "Avr", "Mai", "Jun", "Jul", "Aou", "Sep", "Oct", "Nov", "Dec"];
-
   // Requête pour les alertes
   const alerts = await this.prisma.alert.findMany({
     where: {
@@ -106,7 +108,6 @@ async generateMonthlyStatsCSV(): Promise<string> {
       },
     });
 
-    // Transformation des données pour le CSV
     const result = pannes
       .map(panne => {
         if (panne.alert?.device?.user) {
@@ -132,11 +133,10 @@ async generateMonthlyStatsCSV(): Promise<string> {
         { id: 'device_id', title: 'Device ID' },
         { id: 'device_type_name', title: 'Device Type Name' },
       ],
-        fieldDelimiter: ';' // <-- important pour une bonne lisibilité sous Excel en français
+        fieldDelimiter: ';' 
 
     });
 
-    // Écriture dans le fichier CSV
     await csvWriter.writeRecords(result);
 
     return 'pannes_data.csv'; 
@@ -150,10 +150,10 @@ async generateMonthlyStatsCSV(): Promise<string> {
 }[]> {
   const currentYear = new Date().getFullYear();
   const lastYear = currentYear - 1;
-  const currentMonthIndex = new Date().getMonth(); // 0 = janvier, 5 = juin...
+  const currentMonthIndex = new Date().getMonth(); 
 
   const startDate = new Date(`${lastYear}-01-01T00:00:00Z`);
-  const endDate = new Date(currentYear, currentMonthIndex + 1, 1); // début du mois suivant le mois actuel
+  const endDate = new Date(currentYear, currentMonthIndex + 1, 1); 
 
   const sales = await this.prisma.purchase_history.findMany({
     where: {
@@ -200,7 +200,7 @@ async generateMonthlyStatsCSV(): Promise<string> {
   for (const year of [lastYear, currentYear]) {
     const monthsToInclude = year === lastYear
       ? monthLabels // inclure les 12 mois
-      : monthLabels.slice(0, currentMonthIndex + 1); // jusqu'au mois actuel inclus
+      : monthLabels.slice(0, currentMonthIndex + 1); 
 
     let totalSales = 0;
     let count = 0;
@@ -223,7 +223,85 @@ async generateMonthlyStatsCSV(): Promise<string> {
       result.push({ month, year, sales, message });
     }
   }
-
   return result;
 }
+
+
+
+async generateAlertsAndPannesStatsCSV(): Promise<string> {
+  const monthLabels = ["Jan", "Fev", "Mar", "Avr", "Mai", "Jun", "Jul", "Aou", "Sep", "Oct", "Nov", "Dec"];
+
+  const alerts = await this.prisma.alert.findMany({
+    select: { id: true, date: true },
+  });
+
+  const pannes = await this.prisma.panne_history.findMany({
+    include: {
+      alert: {
+        select: { date: true },
+      },
+    },
+  });
+
+  const purchases = await this.prisma.purchase_history.findMany({
+    select: { id: true, date: true },
+  });
+
+  const statsMap = new Map<string, { nb_alertes: number; nb_pannes: number; nb_ventes: number }>();
+
+  // Compter les alertes
+  for (const a of alerts) {
+    const date = new Date(a.date);
+    const key = `${monthLabels[date.getMonth()]} ${date.getFullYear()}`;
+    const stat = statsMap.get(key) ?? { nb_alertes: 0, nb_pannes: 0, nb_ventes: 0 };
+    stat.nb_alertes += 1;
+    statsMap.set(key, stat);
+  }
+
+  // Compter les pannes
+  for (const p of pannes) {
+    if (p.alert?.date) {
+      const date = new Date(p.alert.date);
+      const key = `${monthLabels[date.getMonth()]} ${date.getFullYear()}`;
+      const stat = statsMap.get(key) ?? { nb_alertes: 0, nb_pannes: 0, nb_ventes: 0 };
+      stat.nb_pannes += 1;
+      statsMap.set(key, stat);
+    }
+  }
+
+  // Compter les ventes
+  for (const p of purchases) {
+    const date = new Date(p.date);
+    const key = `${monthLabels[date.getMonth()]} ${date.getFullYear()}`;
+    const stat = statsMap.get(key) ?? { nb_alertes: 0, nb_pannes: 0, nb_ventes: 0 };
+    stat.nb_ventes += 1;
+    statsMap.set(key, stat);
+  }
+
+  // Trier les clés par année puis mois
+  const sortedKeys = Array.from(statsMap.keys()).sort((a, b) => {
+    const [monthA, yearA] = a.split(' ');
+    const [monthB, yearB] = b.split(' ');
+    const monthIndex = (m: string) => monthLabels.indexOf(m);
+    return Number(yearA) - Number(yearB) || monthIndex(monthA) - monthIndex(monthB);
+  });
+
+  // Créer le contenu du CSV
+  const header = 'Mois;Nombre d\'alertes;Nombre de pannes;Nombre de ventes';
+  const rows = sortedKeys.map(key => {
+    const s = statsMap.get(key)!;
+    return `${key};${s.nb_alertes};${s.nb_pannes};${s.nb_ventes}`;
+  });
+
+  const content = [header, ...rows].join('\n');
+
+  // Sauvegarder le fichier
+  const filePath = path.join('export', 'alertes_pannes_par_mois.csv');
+  fs.mkdirSync(path.dirname(filePath), { recursive: true });
+  fs.writeFileSync(filePath, content, 'utf8');
+
+  // Retourner le chemin absolu
+  return path.resolve(filePath);
+}
+
 }
