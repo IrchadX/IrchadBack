@@ -11,7 +11,7 @@ import {
 import { OffersService } from './offers.service';
 import { ParseIntPipe } from '@nestjs/common';
 
-@Controller()
+@Controller('offers')
 export class OffersController {
   constructor(private readonly offersService: OffersService) {}
 
