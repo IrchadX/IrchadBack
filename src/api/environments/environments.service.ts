@@ -129,16 +129,25 @@ export class EnvironmentsService {
       where: { env_id: envId },
     });
 
-    // Extract and create new zones and POIs
     const zones = features
-      .filter((f) => f.properties.typeId != null)
-      .map((f) => ({
-        name: f.properties.name,
-        description: f.properties.description,
-        coordinates: f.geometry.coordinates,
-        env_id: envId,
-        map_id: mapId,
-      }));
+      .filter((f) => f.properties.typeId != null && f.properties.type == 'zone')
+      .map((f) => {
+        const zone: any = {
+          name: f.properties.name,
+          description: f.properties.description,
+          coordinates: f.geometry.coordinates,
+          env_id: envId,
+          map_id: mapId,
+        };
+
+        // Extract type_id properly
+        const extractedTypeId = this.extractTypeId(f.properties.typeId);
+        if (extractedTypeId !== null) {
+          zone.type_id = extractedTypeId;
+        }
+
+        return zone;
+      });
 
     const pois = features
       .filter((f) => f.properties.type === 'poi')
@@ -257,16 +266,26 @@ export class EnvironmentsService {
       console.log(`⚠️ Skipping association because user_id is missing.`);
     }
 
-    // extract zones and POIs from the posted geojson
+    // Similarly for the create method, update the zone mapping:
     const zones = features
       .filter((f) => f.properties.type === 'zone')
-      .map((f) => ({
-        name: f.properties.name,
-        description: f.properties.description,
-        coordinates: f.geometry.coordinates,
-        env_id: envId,
-        map_id: map.id,
-      }));
+      .map((f) => {
+        const zone: any = {
+          name: f.properties.name,
+          description: f.properties.description,
+          coordinates: f.geometry.coordinates,
+          env_id: envId,
+          map_id: map.id,
+        };
+
+        // Extract type_id properly
+        const extractedTypeId = this.extractTypeId(f.properties.typeId);
+        if (extractedTypeId !== null) {
+          zone.type_id = extractedTypeId;
+        }
+
+        return zone;
+      });
 
     const pois = features
       .filter((f) => f.properties.type === 'poi')
@@ -349,9 +368,29 @@ export class EnvironmentsService {
     return environment;
   }
 
+  private extractTypeId(typeId: any): number | null {
+    if (typeId === null || typeId === undefined) {
+      return null;
+    }
+
+    // If typeId is an object with an id property
+    if (typeof typeId === 'object' && typeId.id) {
+      const parsed = parseInt(typeId.id);
+      return isNaN(parsed) ? null : parsed;
+    }
+
+    // If typeId is a direct number or string
+    if (typeof typeId === 'number' || typeof typeId === 'string') {
+      const parsed = parseInt(typeId.toString());
+      return isNaN(parsed) ? null : parsed;
+    }
+
+    return null;
+  }
+
   async update(id: string, updateEnvironmentDto: any) {
     console.log('Incoming update data:', updateEnvironmentDto);
-    const envId = Number(id); // convert the id into a number
+    const envId = Number(id);
     const { features, properties } = updateEnvironmentDto;
 
     console.log('🔹 Starting update for environment ID:', envId);
@@ -362,6 +401,7 @@ export class EnvironmentsService {
       address: properties.environment.address,
       is_public: properties.environment.isPublic,
       description: properties.environment.description,
+      updated_at: new Date().toISOString(),
     };
 
     console.log('Environment update data:', updateData);
@@ -375,7 +415,7 @@ export class EnvironmentsService {
 
     console.log('✅ Environment updated:', environment);
 
-    //  Handle `env_user` table updates
+    // Handle `env_user` table updates
     if (properties.environment.isPublic) {
       // if public, remove all `env_user` records for this env
       await this.prisma.env_user.deleteMany({ where: { env_id: envId } });
@@ -417,25 +457,38 @@ export class EnvironmentsService {
     console.log('📌 Existing Zones:', existingZones);
     console.log('📌 Existing POIs:', existingPOIs);
 
-    // FIXED: Transform GeoJSON features into Zone and POI objects
-    // Now checking for properties.type === 'zone' OR properties.typeId === 'zone'
     const newZones: CreateZoneDto[] = features
-      .filter(
-        (f) => f.properties.type === 'zone' || f.properties.typeId != null,
-      )
-      .map((f) => ({
-        id: Number(f.properties.id),
-        name: f.properties.name || null,
-        description: f.properties.description || null,
-        coordinates: f.geometry.coordinates,
-        env_id: envId,
-      }));
+      .filter((f) => {
+        return (
+          f.properties.type === 'zone' ||
+          (f.properties.typeId != null &&
+            this.extractTypeId(f.properties.typeId) !== null &&
+            f.properties.type !== 'poi')
+        );
+      })
+      .map((f) => {
+        const zone: any = {
+          id: Number(f.properties.id),
+          name: f.properties.name || null,
+          description: f.properties.description || null,
+          coordinates: f.geometry.coordinates,
+          env_id: envId,
+        };
 
-    // Check for POIs using multiple possible property identifiers
+        // Extract type_id properly
+        const extractedTypeId = this.extractTypeId(f.properties.typeId);
+        if (extractedTypeId !== null) {
+          zone.type_id = extractedTypeId;
+        }
+
+        return zone;
+      });
+    // FIXED: More precise POI filtering
     const newPOIs: CreatePoiDto[] = features
-      .filter(
-        (f) => f.properties.type === 'poi' || f.properties.typeId === 'poi',
-      )
+      .filter((f) => {
+        // A feature is a POI if it explicitly has type === 'poi'
+        return f.properties.type === 'poi';
+      })
       .map((f) => ({
         id: Number(f.properties.id),
         name: f.properties.name || null,

@@ -13,6 +13,7 @@ export class ZonesService {
         name: createZoneDto.name,
         description: createZoneDto.description,
         coordinates: createZoneDto.coordinates,
+        type_id: createZoneDto.type_id,
       },
     });
   }
