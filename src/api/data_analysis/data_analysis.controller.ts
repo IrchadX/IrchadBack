@@ -43,7 +43,6 @@ async predictSales(): Promise<any> {
 
   return new Promise((resolve, reject) => {
     const pythonProcess = spawn('py', [scriptPath, csvPath]);
-
     let result = '';
     let errorOutput = '';
 

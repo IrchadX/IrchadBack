@@ -11,7 +11,7 @@ import { DevicesModule } from './api/devices/devices.module';
 import { SalesModule } from './api/sales/sales.module';
 import { OffersModule } from './api/offers/offers.module';
 import { APP_GUARD } from '@nestjs/core';
-import { ReportsModule } from './reports/reports.module';
+import { ReportsModule } from './api/reports/reports.module';
 import { GatewayRolesGuard } from './decorators/gateway-roles.decorator';
 import { StatisticsModule } from './api/statistics/statistics.module';
 import { GraphicsModule } from './api/graphics/graphics.module';
@@ -20,11 +20,15 @@ import { GraphicsService } from './api/graphics/graphics.service';
 import { ZonesModule } from './api/zones/zones.module';
 import { ZonesController } from './api/zones/zones.controller';
 import { ZonesService } from './api/zones/zones.service';
-import { DataAnalysisModule } from './data_analysis/data_analysis.module';
+import { DataAnalysisModule } from './api/data_analysis/data_analysis.module';
 import { ProfilModule } from './api/profil/profil.module';
 import { PoiCategoriesModule } from './api/poi-categories/poi-categories.module';
 import { ZoneTypesModule } from './api/zone-types/zone-types.module';
 import { AuthModule } from './api/auth/auth.module';
+import { ZoneModule } from './api/zone/zone.module';
+import { ZoneService } from './api/zone/zone.service';
+import { ZoneController } from './api/zone/zone.controller';
+
 @Module({
   imports: [
     ConfigModule.forRoot({
@@ -41,12 +45,13 @@ import { AuthModule } from './api/auth/auth.module';
     ReportsModule,
     StatisticsModule,
     GraphicsModule,
-    ZonesModule,
+    ZoneModule,
     DataAnalysisModule,
     ProfilModule,
     PoiCategoriesModule,
     ZoneTypesModule,
     AuthModule,
+    ZoneModule,
   ],
   controllers: [AppController, GraphicsController, ZonesController],
   providers: [

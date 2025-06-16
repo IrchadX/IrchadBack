@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { PrismaService } from '../prisma/prisma.service';
+import { PrismaService } from '../../prisma/prisma.service';
 import * as createCsvWriter from 'csv-writer';
 import * as fs from 'fs';
 import * as path from 'path';
