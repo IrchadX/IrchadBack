@@ -15,7 +15,7 @@
     "seed:all": "npm run seed:zone-types && npm run seed:poi-categories",
     "seed": "ts-node prisma/zones-seed.ts",
     "prebuild": "prisma generate",
-    "start:prod": "node dist/main.js",
+    "start:prod": "node dist/src/main.js",
     "build": "npx prisma generate && nest build && mkdir -p dist/src/data_analysis/prediction && (cp src/data_analysis/prediction/*.py dist/src/data_analysis/prediction/ 2>/dev/null || true)",
     "prisma:generate": "prisma generate",
     "postbuild": "prisma generate",
