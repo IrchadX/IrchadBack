@@ -1,27 +1,30 @@
 // src/app.module.ts
 import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
-import { AuthModule } from './api/auth/auth.module';
 import { PrismaModule } from './prisma/prisma.module';
 import { UsersModule } from './api/users/users.module';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
-import { DevicesModule } from './api/devices/devices.module';
 import { EnvironmentsModule } from './api/environments/environments.module';
 import { PoisModule } from './api/pois/pois.module';
-import { PrismaService } from './prisma/prisma.service';
+import { DevicesModule } from './api/devices/devices.module';
+import { SalesModule } from './api/sales/sales.module';
+import { OffersModule } from './api/offers/offers.module';
+import { APP_GUARD } from '@nestjs/core';
 import { ReportsModule } from './reports/reports.module';
-import { StatisticsModule } from './statistics/statistics.module';
-import { GraphicsModule } from './graphics/graphics.module';
-import { GraphicsController } from './graphics/graphics.controller'; 
-import { GraphicsService } from './graphics/graphics.service'; 
-import { ZonesModule } from './zones/zones.module';
-import { ZonesController } from './zones/zones.controller';
-import { ZonesService } from './zones/zones.service';
+import { GatewayRolesGuard } from './decorators/gateway-roles.decorator';
+import { StatisticsModule } from './api/statistics/statistics.module';
+import { GraphicsModule } from './api/graphics/graphics.module';
+import { GraphicsController } from './api/graphics/graphics.controller';
+import { GraphicsService } from './api/graphics/graphics.service';
+import { ZonesModule } from './api/zones/zones.module';
+import { ZonesController } from './api/zones/zones.controller';
+import { ZonesService } from './api/zones/zones.service';
 import { DataAnalysisModule } from './data_analysis/data_analysis.module';
-import { ProfilModule } from './profil/profil.module';
-
-
+import { ProfilModule } from './api/profil/profil.module';
+import { PoiCategoriesModule } from './api/poi-categories/poi-categories.module';
+import { ZoneTypesModule } from './api/zone-types/zone-types.module';
+import { AuthModule } from './api/auth/auth.module';
 @Module({
   imports: [
     ConfigModule.forRoot({
@@ -29,8 +32,9 @@ import { ProfilModule } from './profil/profil.module';
     }),
     PrismaModule,
     UsersModule,
-    AuthModule,
     DevicesModule,
+    SalesModule,
+    OffersModule,
     EnvironmentsModule,
     ZonesModule,
     PoisModule,
@@ -40,8 +44,19 @@ import { ProfilModule } from './profil/profil.module';
     ZonesModule,
     DataAnalysisModule,
     ProfilModule,
+    PoiCategoriesModule,
+    ZoneTypesModule,
+    AuthModule,
   ],
-  controllers: [AppController,GraphicsController,ZonesController],
-  providers: [AppService,GraphicsService,ZonesService],
+  controllers: [AppController, GraphicsController, ZonesController],
+  providers: [
+    AppService,
+    GraphicsService,
+    ZonesService,
+    {
+      provide: APP_GUARD,
+      useClass: GatewayRolesGuard,
+    },
+  ],
 })
 export class AppModule {}

@@ -1,6 +1,6 @@
 import { Controller, Get, Query, Res, HttpException, HttpStatus } from '@nestjs/common';
 import { ReportsService } from './reports.service';
-import { ReportFilterDto } from '../dto/filter.dto';
+import { ReportFilterDto } from './dto/filter.dto';
 import { Response } from 'express';
 import { Roles } from '../api/auth/decorators/roles.decorator';
 import { JwtAuthGuard } from '../api/auth/guards/jwt-auth.guard';

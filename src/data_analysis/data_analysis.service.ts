@@ -1,13 +1,13 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
-import * as createCsvWriter from 'csv-writer'; 
+import * as createCsvWriter from 'csv-writer';
 import * as fs from 'fs';
 import * as path from 'path';
 import { exec } from 'child_process';
 import { promisify } from 'util';
 @Injectable()
 export class DataAnalysisService {
-  constructor(private readonly prisma: PrismaService) {} 
+  constructor(private readonly prisma: PrismaService) {}
 
 
 async generateMonthlyStatsCSV(): Promise<string> {
@@ -88,16 +88,16 @@ async generateMonthlyStatsCSV(): Promise<string> {
             date: true,
             device: {
               select: {
-                id: true, 
+                id: true,
                 device_type: {
                   select: {
-                    type: true, 
+                    type: true,
                   },
                 },
                 user: {
                   select: {
-                    id: true,   
-                    family_name: true, 
+                    id: true,
+                    family_name: true,
                     first_name: true,
                   },
                 },
@@ -109,7 +109,7 @@ async generateMonthlyStatsCSV(): Promise<string> {
     });
 
     const result = pannes
-      .map(panne => {
+      .map((panne) => {
         if (panne.alert?.device?.user) {
           return {
             user_id: panne.alert.device.user.id,
@@ -119,13 +119,13 @@ async generateMonthlyStatsCSV(): Promise<string> {
             device_type_name: panne.alert.device.device_type.type,
           };
         } else {
-          return null; 
+          return null;
         }
       })
-      .filter(item => item !== null); 
+      .filter((item) => item !== null);
 
     const csvWriter = createCsvWriter.createObjectCsvWriter({
-      path: 'pannes_data.csv', 
+      path: 'pannes_data.csv',
       header: [
         { id: 'user_id', title: 'User ID' },
         { id: 'user_name', title: 'User Name' },
@@ -139,7 +139,7 @@ async generateMonthlyStatsCSV(): Promise<string> {
 
     await csvWriter.writeRecords(result);
 
-    return 'pannes_data.csv'; 
+    return 'pannes_data.csv';
   }
 
   async getGlobalSalesByMonth(): Promise<{

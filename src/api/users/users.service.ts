@@ -140,18 +140,19 @@ export class UsersService {
 
       // Filter by user type
       if (filters?.userType) {
-        const userTypes = await this.prisma.user_type.findMany();
-        console.log(`All user types: ${JSON.stringify(userTypes)}`);
-
-        // Fetch the userTypeId for the given type
-        const userType = await this.prisma.user_type.findFirst({
-          where: { type: filters.userType },
+        // Fetch all userTypeIds for the given types
+        const userTypes = await this.prisma.user_type.findMany({
+          where: {
+            type: { in: filters.userType },
+          },
         });
 
-        if (userType) {
-          whereClause.userTypeId = userType.id; // Filter by userTypeId
+        const userTypeIds = userTypes.map((userType) => userType.id);
+
+        if (userTypeIds.length > 0) {
+          whereClause.userTypeId = { in: userTypeIds }; // Filter by userTypeId
         } else {
-          return [];
+          return []; // No matching user types found
         }
       }
 
@@ -161,9 +162,9 @@ export class UsersService {
         include: { user_type: true },
       });
 
-      return users.map(({ password, birth_date, user_type, ...user }) => ({
+      return users.map(({ password, birth_date, userTypeId, ...user }) => ({
         ...user,
-        userType: user_type ? user_type.type : 'N/A',
+        userType: userTypeId ? userTypeId : 'N/A',
         birthDate: birth_date ? birth_date.toISOString().split('T')[0] : null,
       }));
     } catch (error) {
@@ -244,11 +245,16 @@ export class UsersService {
       }
 
       // Destructure and format response
-      const { password, birth_date, user_type, ...result } = user;
+      const { password, birth_date, userTypeId, ...result } = user;
+      const userTypeName =
+        userTypeId &&
+        this.prisma.user_type.findUnique({
+          where: { id: userTypeId },
+        });
 
       return {
         ...result,
-        userTypeName: user_type?.type ?? null, // Get the actual name from the user_type table
+        userTypeName: userTypeName,
         birthDate: birth_date ? birth_date.toISOString().split('T')[0] : null, // Convert birth_date to YYYY-MM-DD
       };
     } catch (error) {
@@ -257,6 +263,28 @@ export class UsersService {
         throw error;
       }
       throw new InternalServerErrorException('Failed to fetch user');
+    }
+  }
+
+  async findByName(firstName: string, familyName: string) {
+    try {
+      const user = await this.prisma.user.findFirst({
+        where: {
+          first_name: firstName,
+          family_name: familyName,
+        },
+      });
+
+      if (!user) {
+        throw new NotFoundException(
+          `User with name ${firstName} ${familyName} not found`,
+        );
+      }
+
+      return user;
+    } catch (error) {
+      console.error('Error fetching user by name:', error);
+      throw new InternalServerErrorException('Failed to fetch user by name');
     }
   }
 }

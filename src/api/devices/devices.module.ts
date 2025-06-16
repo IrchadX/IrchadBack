@@ -11,3 +11,5 @@ import { PrismaModule } from '@/prisma/prisma.module';
   providers: [DeviceService],
 })
 export class DevicesModule {}
+
+

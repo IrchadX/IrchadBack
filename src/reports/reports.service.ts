@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
-import { ReportFilterDto } from '../dto/filter.dto';
+import { ReportFilterDto } from './dto/filter.dto';
 import pdfMake from './pdfmake-wrapper';
 import * as pdfFonts from 'pdfmake/build/vfs_fonts';
 

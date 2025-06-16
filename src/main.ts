@@ -3,6 +3,7 @@ import { AppModule } from './app.module';
 import * as express from 'express';
 import { join } from 'path';
 import { ValidationPipe } from '@nestjs/common';
+import * as cookieParser from 'cookie-parser';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
@@ -11,15 +12,26 @@ async function bootstrap() {
 
   // Enable CORS
   app.enableCors({
-    origin: ['http://localhost:3001', 'http://localhost:3000'],
+    origin: [
+      'https://apigateway-production-f7c1.up.railway.app/',
+      'http://localhost:3001',
+      'http://localhost:3000',
+      'http://localhost:3002',
+    ],
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
     credentials: true,
     allowedHeaders: ['Content-Type', 'Authorization'],
   });
 
-  // Global validation pipe for all endpoints
-  app.useGlobalPipes(new ValidationPipe());
+  app.use(cookieParser());
 
-  await app.listen(3001); // Port du back-end
+  app.useGlobalPipes(
+    new ValidationPipe({
+      transform: true,
+      whitelist: true,
+    }),
+  );
+  const port = process.env.PORT || 8080;
+  await app.listen(port, '0.0.0.0');
 }
 bootstrap();
