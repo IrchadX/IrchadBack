@@ -39,7 +39,7 @@ export class DataAnalysisController {
 @Get('predict')
 async predictSales(): Promise<any> {
   const csvPath = await this.dataAnalysisService.generateAlertsAndPannesStatsCSV();
-  const scriptPath = path.resolve(__dirname, 'prediction', 'predict_sales.py');
+const scriptPath = path.join(__dirname, '..', '..', '..', 'src', 'api', 'data_analysis', 'prediction', 'predict_sales.py');
 
   return new Promise((resolve, reject) => {
     const pythonProcess = spawn('py', [scriptPath, csvPath]);
