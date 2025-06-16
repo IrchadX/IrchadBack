@@ -72,53 +72,34 @@ export class EnvironmentsService {
     const envId = id;
     const userId = Number(properties.environment.userId);
 
-    // Handle environment delimiter with walls and windows
-    const environmentFeature = features.find(
-      (f) => f.properties.type === 'environment',
+    // Handle delimiters (environment, walls, windows) - Updated to match update method
+    const delimiterFeatures = features.filter((f) => {
+      return ['wall', 'window', 'environment'].includes(f.properties.type);
+    });
+
+    console.log(
+      `*** Processing ${delimiterFeatures.length} delimiter features`,
     );
 
-    // Get walls and windows features
-    const wallFeatures = features.filter((f) => f.properties.type === 'wall');
+    // Clear existing delimiters first
+    await this.prisma.env_delimiter.deleteMany({
+      where: { env_id: envId },
+    });
 
-    const windowFeatures = features.filter(
-      (f) => f.properties.type === 'window',
-    );
+    // Insert new delimiters
+    if (delimiterFeatures.length > 0) {
+      const delimitersData = delimiterFeatures.map((f) => ({
+        type: f.properties.type,
+        coordinates: f.geometry.coordinates,
+        env_id: envId,
+      }));
 
-    if (environmentFeature) {
-      // Check if delimiter already exists
-      const existingDelimiter = await this.prisma.env_delimiter.findFirst({
-        where: { env_id: envId },
+      await this.prisma.env_delimiter.createMany({
+        data: delimitersData,
       });
 
-      // Prepare delimiter data with environment boundary, walls, and windows
-      const delimiterData = {
-        env_id: envId,
-        coordinates: environmentFeature.geometry.coordinates,
-        walls: wallFeatures.map((wall) => ({
-          coordinates: wall.geometry.coordinates,
-          properties: wall.properties,
-        })),
-        windows: windowFeatures.map((window) => ({
-          coordinates: window.geometry.coordinates,
-          properties: window.properties,
-        })),
-      };
-
-      if (existingDelimiter) {
-        // Update existing delimiter
-        await this.prisma.env_delimiter.update({
-          where: { id: existingDelimiter.id },
-          data: delimiterData,
-        });
-      } else {
-        // Create new delimiter
-        await this.prisma.env_delimiter.create({
-          data: delimiterData,
-        });
-      }
-
       console.log(
-        `✅ Updated environment delimiter with ${wallFeatures.length} walls and ${windowFeatures.length} windows.`,
+        `✅ Inserted ${delimitersData.length} delimiters (${delimiterFeatures.filter((f) => f.properties.type === 'environment').length} environment, ${delimiterFeatures.filter((f) => f.properties.type === 'wall').length} walls, ${delimiterFeatures.filter((f) => f.properties.type === 'window').length} windows).`,
       );
     }
 
@@ -151,7 +132,12 @@ export class EnvironmentsService {
     });
 
     const zones = features
-      .filter((f) => f.properties.typeId != null && f.properties.type == 'zone')
+      .filter(
+        (f) =>
+          f.properties.typeId != null &&
+          f.properties.type == 'zone' &&
+          f.properties.name != null,
+      )
       .map((f) => {
         const zone: any = {
           name: f.properties.name,
@@ -171,7 +157,7 @@ export class EnvironmentsService {
       });
 
     const pois = features
-      .filter((f) => f.properties.type === 'poi')
+      .filter((f) => f.properties.type === 'poi' && f.properties.name != null)
       .map((f) => ({
         name: f.properties.name,
         description: f.properties.description,
@@ -183,9 +169,7 @@ export class EnvironmentsService {
 
     console.log('*** Creating Zones:', zones);
     console.log('*** Creating POIs:', pois);
-    console.log(
-      `*** Processed ${wallFeatures.length} walls and ${windowFeatures.length} windows in delimiter`,
-    );
+    console.log(`*** Processed ${delimiterFeatures.length} delimiter features`);
 
     // Bulk insert zones and POIs
     zones.length > 0 && (await this.prisma.zone.createMany({ data: zones }));
@@ -217,8 +201,7 @@ export class EnvironmentsService {
       }),
       zones: insertedZones,
       pois: insertedPOIs,
-      walls: wallFeatures.length,
-      windows: windowFeatures.length,
+      delimiters: delimiterFeatures.length,
     };
   }
 
@@ -489,8 +472,9 @@ export class EnvironmentsService {
     const newZones: CreateZoneDto[] = features
       .filter((f) => {
         return (
-          f.properties.type === 'zone' ||
-          (f.properties.typeId != null &&
+          (f.properties.name && f.properties.type === 'zone') ||
+          (f.properties.name &&
+            f.properties.typeId != null &&
             this.extractTypeId(f.properties.typeId) !== null &&
             f.properties.type !== 'poi')
         );
@@ -517,7 +501,7 @@ export class EnvironmentsService {
     const newPOIs: CreatePoiDto[] = features
       .filter((f) => {
         // A feature is a POI if it explicitly has type === 'poi'
-        return f.properties.type === 'poi';
+        return f.properties.name && f.properties.type === 'poi';
       })
       .map((f) => ({
         id: Number(f.properties.id),
