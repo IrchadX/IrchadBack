@@ -10,12 +10,15 @@
     "npm": ">=9.0.0"
   },
   "scripts": {
+    "start:dev": "nest start --watch",
     "seed:zone-types": "ts-node ./prisma/zones-seed.ts",
     "seed:poi-categories": "ts-node ./prisma/categories-seed.ts",
     "seed:all": "npm run seed:zone-types && npm run seed:poi-categories",
     "seed": "ts-node prisma/zones-seed.ts",
     "prebuild": "prisma generate",
-"build": "npx prisma generate && nest build && xcopy src\\data_analysis\\prediction\\*.py dist\\src\\data_analysis\\prediction\\ /E /I /Y",    "prisma:generate": "prisma generate",
+    "start:prod": "node dist/src/main.js",
+    "build": "npx prisma generate && nest build && mkdir -p dist/src/data_analysis/prediction && (cp src/data_analysis/prediction/*.py dist/src/data_analysis/prediction/ 2>/dev/null || true)",
+    "prisma:generate": "prisma generate",
     "postbuild": "prisma generate",
     "format": "prettier --write \"src/**/*.ts\" \"test/**/*.ts\"",
     "start": "nest start",

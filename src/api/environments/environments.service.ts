@@ -751,11 +751,11 @@ export class EnvironmentsService {
             : {},
 
           // Only include environments that HAVE at least one env_delimiter
-          // {
-          //   env_delimiter: {
-          //     some: {},
-          //   },
-          // },
+          {
+            env_delimiter: {
+              some: {},
+            },
+          },
         ],
       },
     });
@@ -788,11 +788,11 @@ export class EnvironmentsService {
             : {},
 
           // Filter for environments with no env_delimiter
-          // {
-          //   env_delimiter: {
-          //     none: {},
-          //   },
-          // },
+          {
+            env_delimiter: {
+              none: {},
+            },
+          },
         ],
       },
     });

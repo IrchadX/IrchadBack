@@ -1,5 +1,7 @@
 import { Controller, Get } from '@nestjs/common';
 import { StatisticsService } from './statistics.service';
+import { alert } from '@prisma/client';
+
 
 @Controller('statistics')
 export class StatisticsController {
@@ -42,11 +44,11 @@ export class StatisticsController {
       await this.statisticsService.getAverageInterventionDuration();
     return { avgDuration };
   }
-  // @Get('all-alerts')
-  // async getAllAlerts(): Promise<{ alerts: alert[] }> {
-  //   const alerts = await this.statisticsService.getAllAlerts();
-  //   return { alerts };
-  // }
+  @Get('all-alerts')
+   async getAllAlerts(): Promise<{ alerts: alert[] }> {
+    const alerts = await this.statisticsService.getAllAlerts();
+    return { alerts };
+ }
   @Get('interventions')
   async getTechnicalInterventionPercentage() {
     const percentage =
