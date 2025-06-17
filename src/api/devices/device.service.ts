@@ -122,7 +122,7 @@ export class DeviceService {
   async getUsersWithNoDevices() {
     const users = await this.prisma.user.findMany({
       where: {
-        userTypeId: 7,
+        userTypeId: 14,
         device: {
           none: {},
         },
