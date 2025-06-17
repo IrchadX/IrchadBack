@@ -5,8 +5,8 @@ import * as pdfMake from 'pdfmake/build/pdfmake';
 import * as pdfFonts from 'pdfmake/build/vfs_fonts';
 import { TDocumentDefinitions, Content } from 'pdfmake/interfaces';
 
-// Configure fonts for pdfmake - Fixed import issue
-(pdfMake as any).vfs = pdfFonts.pdfMake.vfs;
+// Configure fonts for pdfmake - Correct way to access vfs
+(pdfMake as any).vfs = (pdfFonts as any).pdfMake.vfs;
 
 @Injectable()
 export class ReportsService {
