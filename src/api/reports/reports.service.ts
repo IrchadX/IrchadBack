@@ -1,16 +1,41 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service';
 import { ReportFilterDto } from './dto/filter.dto';
-import * as pdfMake from 'pdfmake/build/pdfmake';
-import * as pdfFonts from 'pdfmake/build/vfs_fonts';
-import { TDocumentDefinitions, Content } from 'pdfmake/interfaces';
 
-// Configure fonts for pdfmake - Correct way to access vfs
-(pdfMake as any).vfs = (pdfFonts as any).pdfMake.vfs;
+// Alternative import method
+const PdfMake = require('pdfmake');
+const pdfFonts = require('pdfmake/build/vfs_fonts');
 
 @Injectable()
 export class ReportsService {
-  constructor(private prisma: PrismaService) {}
+  private pdfMake: any;
+
+  constructor(private prisma: PrismaService) {
+    // Initialize pdfMake with fonts
+    this.initializePdfMake();
+  }
+
+  private initializePdfMake() {
+    const fonts = {
+      Roboto: {
+        normal: Buffer.from(
+          pdfFonts.pdfMake.vfs['Roboto-Regular.ttf'],
+          'base64',
+        ),
+        bold: Buffer.from(pdfFonts.pdfMake.vfs['Roboto-Medium.ttf'], 'base64'),
+        italics: Buffer.from(
+          pdfFonts.pdfMake.vfs['Roboto-Italic.ttf'],
+          'base64',
+        ),
+        bolditalics: Buffer.from(
+          pdfFonts.pdfMake.vfs['Roboto-MediumItalic.ttf'],
+          'base64',
+        ),
+      },
+    };
+
+    this.pdfMake = new PdfMake(fonts);
+  }
 
   private getDateFilter(filter: ReportFilterDto): { gte?: Date; lte?: Date } {
     if (!filter.startDate || !filter.endDate) return {};
@@ -21,13 +46,11 @@ export class ReportsService {
   }
 
   async getPannesByDeviceType(year: number): Promise<any> {
-    // Créer la plage de dates pour l'année spécifiée
     const startDate = new Date(`${year}-01-01T00:00:00.000Z`);
     const endDate = new Date(`${year + 1}-01-01T00:00:00.000Z`);
 
     const pannes = await this.prisma.panne_history.findMany({
       where: {
-        // Ajouter la condition pour filtrer par année
         alert: {
           date: {
             gte: startDate,
@@ -116,13 +139,11 @@ export class ReportsService {
   }
 
   async getAlertLevelsReport(year: number): Promise<any> {
-    // Créer la plage de dates pour l'année spécifiée
     const startDate = new Date(`${year}-01-01T00:00:00.000Z`);
     const endDate = new Date(`${year + 1}-01-01T00:00:00.000Z`);
 
     const pannes = await this.prisma.panne_history.findMany({
       where: {
-        // Ajouter la condition pour filtrer par année
         alert: {
           date: {
             gte: startDate,
@@ -254,138 +275,207 @@ export class ReportsService {
     year: number,
   ): Promise<Buffer> {
     try {
-      const fleetStatusData = await this.getFleetStatusReport(filter);
-      const pannePercentages = await this.getPannesByDeviceType(year);
-      const alertLevelsData = await this.getAlertLevelsReport(year);
-      const deviceTypeStats = await this.getDevicesByType(year);
-      const averageMaintenance = await this.getAverageMaintenanceDuration(year);
+      console.log('Starting PDF generation for year:', year);
 
-      // Fixed content structure with proper typing
-      const content: Content[] = [
-        { text: 'Rapport de dispositifs', style: 'header' },
-        {
-          text: `Date de génération : ${new Date().toLocaleDateString()}`,
-          alignment: 'right',
-          margin: [0, 0, 0, 10],
-        },
-        { text: 'État général de la flotte', style: 'subHeader' },
-        { text: `Total dispositifs : ${fleetStatusData.totalDevices}` },
-        {
-          table: {
-            widths: ['*', '*'],
-            body: [
-              [
-                'En service',
-                `${fleetStatusData.inService} (${fleetStatusData.percentageInService}%)`,
-              ],
-              [
-                'En panne',
-                `${fleetStatusData.inMaintenance} (${fleetStatusData.percentageInMaintenance}%)`,
-              ],
-              [
-                'Déffectueux',
-                `${fleetStatusData.faulty} (${fleetStatusData.percentageFaulty}%)`,
-              ],
-            ],
-          },
-        },
-        {
-          text: 'Répartition des dispositifs par type',
-          style: 'subHeader',
-          margin: [0, 10, 0, 5],
-        },
-        {
-          table: {
-            widths: ['*', '*', '*'],
-            body: [
-              ['Type de dispositif', 'Nombre', 'Pourcentage'],
-              ...deviceTypeStats.map((stat) => [
-                stat.deviceType,
-                stat.count.toString(),
-                `${stat.percentage}%`,
-              ]),
-            ],
-          },
-        },
-        {
-          text: 'Pannes par Type de Dispositif',
-          style: 'subHeader',
-          margin: [0, 10, 0, 5],
-        },
-        {
-          table: {
-            widths: ['*', '*', '*'],
-            body: [
-              ['Type de dispositif', 'Nombre de pannes', 'Pourcentage'],
-              ...pannePercentages.map((stat) => [
-                stat.deviceType,
-                stat.count.toString(),
-                `${stat.percentage}%`,
-              ]),
-            ],
-          },
-        },
-        {
-          text: 'Taux des alertes par niveau',
-          style: 'subHeader',
-          margin: [0, 10, 0, 5],
-        },
-        {
-          table: {
-            widths: ['*', '*', '*'],
-            body: [
-              ["Niveau d'alerte", "Nombre d'alertes", 'Pourcentage'],
-              ...alertLevelsData.map((alert) => [
-                alert.level,
-                alert.count.toString(),
-                `${alert.percentage}%`,
-              ]),
-            ],
-          },
-        },
-        {
-          text: 'Durée moyenne de maintenance',
-          style: 'subHeader',
-          margin: [0, 10, 0, 5],
-        },
-        {
-          text: `Nombre d'interventions analysées : ${averageMaintenance.count}`,
-        },
-        {
-          text: `Durée moyenne : ${averageMaintenance.averageDurationDays} jours`,
-        },
-      ];
+      // Fetch all data first
+      const [
+        fleetStatusData,
+        pannePercentages,
+        alertLevelsData,
+        deviceTypeStats,
+        averageMaintenance,
+      ] = await Promise.all([
+        this.getFleetStatusReport(filter),
+        this.getPannesByDeviceType(year),
+        this.getAlertLevelsReport(year),
+        this.getDevicesByType(year),
+        this.getAverageMaintenanceDuration(year),
+      ]);
 
-      const docDefinition: TDocumentDefinitions = {
-        content,
+      console.log('Data fetched successfully:', {
+        fleetStatus: fleetStatusData,
+        pannes: pannePercentages.length,
+        alerts: alertLevelsData.length,
+        devices: deviceTypeStats.length,
+        maintenance: averageMaintenance,
+      });
+
+      const docDefinition = {
+        defaultStyle: {
+          font: 'Roboto',
+          fontSize: 10,
+        },
+        content: [
+          {
+            text: 'Rapport de dispositifs',
+            style: 'header',
+            margin: [0, 0, 0, 20],
+          },
+          {
+            text: `Date de génération : ${new Date().toLocaleDateString('fr-FR')}`,
+            alignment: 'right',
+            margin: [0, 0, 0, 20],
+          },
+
+          { text: 'État général de la flotte', style: 'subHeader' },
+          {
+            text: `Total dispositifs : ${fleetStatusData.totalDevices}`,
+            margin: [0, 5, 0, 10],
+            fontSize: 12,
+          },
+          {
+            table: {
+              headerRows: 1,
+              widths: ['50%', '50%'],
+              body: [
+                [
+                  { text: 'État', style: 'tableHeader' },
+                  { text: 'Nombre (%)', style: 'tableHeader' },
+                ],
+                [
+                  'En service',
+                  `${fleetStatusData.inService} (${fleetStatusData.percentageInService}%)`,
+                ],
+                [
+                  'En panne',
+                  `${fleetStatusData.inMaintenance} (${fleetStatusData.percentageInMaintenance}%)`,
+                ],
+                [
+                  'Défectueux',
+                  `${fleetStatusData.faulty} (${fleetStatusData.percentageFaulty}%)`,
+                ],
+              ],
+            },
+            layout: 'lightHorizontalLines',
+            margin: [0, 0, 0, 20],
+          },
+
+          { text: 'Répartition des dispositifs par type', style: 'subHeader' },
+          {
+            table: {
+              headerRows: 1,
+              widths: ['40%', '30%', '30%'],
+              body: [
+                [
+                  { text: 'Type de dispositif', style: 'tableHeader' },
+                  { text: 'Nombre', style: 'tableHeader' },
+                  { text: 'Pourcentage', style: 'tableHeader' },
+                ],
+                ...deviceTypeStats.map((stat) => [
+                  stat.deviceType || 'N/A',
+                  stat.count.toString(),
+                  `${stat.percentage}%`,
+                ]),
+              ],
+            },
+            layout: 'lightHorizontalLines',
+            margin: [0, 0, 0, 20],
+          },
+
+          { text: 'Pannes par Type de Dispositif', style: 'subHeader' },
+          {
+            table: {
+              headerRows: 1,
+              widths: ['40%', '30%', '30%'],
+              body: [
+                [
+                  { text: 'Type de dispositif', style: 'tableHeader' },
+                  { text: 'Nombre de pannes', style: 'tableHeader' },
+                  { text: 'Pourcentage', style: 'tableHeader' },
+                ],
+                ...pannePercentages.map((stat) => [
+                  stat.deviceType || 'N/A',
+                  stat.count.toString(),
+                  `${stat.percentage}%`,
+                ]),
+              ],
+            },
+            layout: 'lightHorizontalLines',
+            margin: [0, 0, 0, 20],
+          },
+
+          { text: 'Taux des alertes par niveau', style: 'subHeader' },
+          {
+            table: {
+              headerRows: 1,
+              widths: ['40%', '30%', '30%'],
+              body: [
+                [
+                  { text: "Niveau d'alerte", style: 'tableHeader' },
+                  { text: "Nombre d'alertes", style: 'tableHeader' },
+                  { text: 'Pourcentage', style: 'tableHeader' },
+                ],
+                ...alertLevelsData.map((alert) => [
+                  alert.level || 'N/A',
+                  alert.count.toString(),
+                  `${alert.percentage}%`,
+                ]),
+              ],
+            },
+            layout: 'lightHorizontalLines',
+            margin: [0, 0, 0, 20],
+          },
+
+          { text: 'Durée moyenne de maintenance', style: 'subHeader' },
+          {
+            ul: [
+              `Nombre d'interventions analysées : ${averageMaintenance.count}`,
+              `Durée moyenne : ${averageMaintenance.averageDurationDays} jours`,
+            ],
+            margin: [0, 5, 0, 10],
+          },
+        ],
+
         styles: {
           header: {
-            alignment: 'center',
-            fontSize: 20,
-            margin: [0, 10, 0, 20],
+            fontSize: 18,
             bold: true,
+            alignment: 'center',
           },
           subHeader: {
-            fontSize: 16,
+            fontSize: 14,
             bold: true,
-            margin: [0, 10, 0, 5],
+            margin: [0, 15, 0, 10],
+          },
+          tableHeader: {
+            bold: true,
+            fillColor: '#eeeeee',
+            margin: [0, 5, 0, 5],
           },
         },
-        defaultStyle: {
-          font: 'Helvetica', // Use Helvetica instead of Roboto for better compatibility
-        },
+
+        pageMargins: [40, 60, 40, 60],
       };
+
+      console.log('Creating PDF document...');
 
       return new Promise((resolve, reject) => {
         try {
-          const pdfDocGenerator = pdfMake.createPdf(docDefinition);
-          pdfDocGenerator.getBuffer((buffer: ArrayBuffer) => {
-            if (!buffer || buffer.byteLength === 0) {
-              reject(new Error('Generated PDF buffer is empty'));
+          const pdfDoc = this.pdfMake.createPdfKitDocument(docDefinition);
+          const chunks: Buffer[] = [];
+
+          pdfDoc.on('data', (chunk: Buffer) => {
+            chunks.push(chunk);
+          });
+
+          pdfDoc.on('end', () => {
+            const result = Buffer.concat(chunks);
+            console.log('PDF generated successfully, size:', result.length);
+
+            if (result.length === 0) {
+              reject(new Error('Generated PDF is empty'));
               return;
             }
-            resolve(Buffer.from(buffer));
+
+            resolve(result);
           });
+
+          pdfDoc.on('error', (error: any) => {
+            console.error('PDF generation error:', error);
+            reject(error);
+          });
+
+          pdfDoc.end();
         } catch (error) {
           console.error('Error creating PDF:', error);
           reject(error);
@@ -393,7 +483,7 @@ export class ReportsService {
       });
     } catch (error) {
       console.error('Error in generateFleetStatusPDF:', error);
-      throw error;
+      throw new Error(`Failed to generate PDF: ${error.message}`);
     }
   }
 }
