@@ -5,7 +5,10 @@ RUN apt-get update && apt-get install -y \
     python3 python3-pip python3-venv \
     fonts-liberation \
     fonts-dejavu-core \
+    fonts-noto \
+    fonts-noto-core \
     fontconfig \
+    libfontconfig1 \
     && python3 -m venv /opt/venv \
     && /opt/venv/bin/pip install pandas scikit-learn python-dateutil numpy \
     && ln -s /opt/venv/bin/python /usr/bin/py \
@@ -14,6 +17,9 @@ RUN apt-get update && apt-get install -y \
 
 # Add virtual environment to PATH so Python packages are available
 ENV PATH="/opt/venv/bin:$PATH"
+
+# Set font environment variables for better PDF rendering
+ENV FONTCONFIG_PATH=/etc/fonts
 
 WORKDIR /app
 

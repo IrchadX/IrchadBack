@@ -1,11 +1,12 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service';
 import { ReportFilterDto } from './dto/filter.dto';
-import pdfMake from 'pdfmake/build/pdfmake';
+import * as pdfMake from 'pdfmake/build/pdfmake';
 import * as pdfFonts from 'pdfmake/build/vfs_fonts';
+import { TDocumentDefinitions, Content } from 'pdfmake/interfaces';
 
-// Configure fonts for pdfmake
-pdfMake.vfs = pdfFonts.pdfMake.vfs;
+// Configure fonts for pdfmake - Fixed import issue
+(pdfMake as any).vfs = pdfFonts.pdfMake.vfs;
 
 @Injectable()
 export class ReportsService {
@@ -259,93 +260,104 @@ export class ReportsService {
       const deviceTypeStats = await this.getDevicesByType(year);
       const averageMaintenance = await this.getAverageMaintenanceDuration(year);
 
-      const docDefinition = {
-        content: [
-          { text: 'Rapport de dispositifs', style: 'header' },
-          {
-            text: `Date de génération : ${new Date().toLocaleDateString()}`,
-            alignment: 'right',
-            margin: [0, 0, 0, 10],
-          },
-          { text: 'État général de la flotte', style: 'subHeader' },
-          { text: `Total dispositifs : ${fleetStatusData.totalDevices}` },
-          {
-            table: {
-              widths: ['*', '*'],
-              body: [
-                [
-                  'En service',
-                  `${fleetStatusData.inService} (${fleetStatusData.percentageInService}%)`,
-                ],
-                [
-                  'En panne',
-                  `${fleetStatusData.inMaintenance} (${fleetStatusData.percentageInMaintenance}%)`,
-                ],
-                [
-                  'Déffectueux',
-                  `${fleetStatusData.faulty} (${fleetStatusData.percentageFaulty}%)`,
-                ],
+      // Fixed content structure with proper typing
+      const content: Content[] = [
+        { text: 'Rapport de dispositifs', style: 'header' },
+        {
+          text: `Date de génération : ${new Date().toLocaleDateString()}`,
+          alignment: 'right',
+          margin: [0, 0, 0, 10],
+        },
+        { text: 'État général de la flotte', style: 'subHeader' },
+        { text: `Total dispositifs : ${fleetStatusData.totalDevices}` },
+        {
+          table: {
+            widths: ['*', '*'],
+            body: [
+              [
+                'En service',
+                `${fleetStatusData.inService} (${fleetStatusData.percentageInService}%)`,
               ],
-            },
-          },
-
-          {
-            text: '\nRépartition des dispositifs par type',
-            style: 'subHeader',
-          },
-          {
-            table: {
-              widths: ['*', '*', '*'],
-              body: [
-                ['Type de dispositif', 'Nombre', 'Pourcentage'],
-                ...deviceTypeStats.map((stat) => [
-                  stat.deviceType,
-                  stat.count,
-                  `${stat.percentage}%`,
-                ]),
+              [
+                'En panne',
+                `${fleetStatusData.inMaintenance} (${fleetStatusData.percentageInMaintenance}%)`,
               ],
-            },
-          },
-
-          { text: '\nPannes par Type de Dispositif', style: 'subHeader' },
-          {
-            table: {
-              widths: ['*', '*', '*'],
-              body: [
-                ['Type de dispositif', 'Nombre de pannes', 'Pourcentage'],
-                ...pannePercentages.map((stat) => [
-                  stat.deviceType,
-                  stat.count,
-                  `${stat.percentage}%`,
-                ]),
+              [
+                'Déffectueux',
+                `${fleetStatusData.faulty} (${fleetStatusData.percentageFaulty}%)`,
               ],
-            },
+            ],
           },
+        },
+        {
+          text: 'Répartition des dispositifs par type',
+          style: 'subHeader',
+          margin: [0, 10, 0, 5],
+        },
+        {
+          table: {
+            widths: ['*', '*', '*'],
+            body: [
+              ['Type de dispositif', 'Nombre', 'Pourcentage'],
+              ...deviceTypeStats.map((stat) => [
+                stat.deviceType,
+                stat.count.toString(),
+                `${stat.percentage}%`,
+              ]),
+            ],
+          },
+        },
+        {
+          text: 'Pannes par Type de Dispositif',
+          style: 'subHeader',
+          margin: [0, 10, 0, 5],
+        },
+        {
+          table: {
+            widths: ['*', '*', '*'],
+            body: [
+              ['Type de dispositif', 'Nombre de pannes', 'Pourcentage'],
+              ...pannePercentages.map((stat) => [
+                stat.deviceType,
+                stat.count.toString(),
+                `${stat.percentage}%`,
+              ]),
+            ],
+          },
+        },
+        {
+          text: 'Taux des alertes par niveau',
+          style: 'subHeader',
+          margin: [0, 10, 0, 5],
+        },
+        {
+          table: {
+            widths: ['*', '*', '*'],
+            body: [
+              ["Niveau d'alerte", "Nombre d'alertes", 'Pourcentage'],
+              ...alertLevelsData.map((alert) => [
+                alert.level,
+                alert.count.toString(),
+                `${alert.percentage}%`,
+              ]),
+            ],
+          },
+        },
+        {
+          text: 'Durée moyenne de maintenance',
+          style: 'subHeader',
+          margin: [0, 10, 0, 5],
+        },
+        {
+          text: `Nombre d'interventions analysées : ${averageMaintenance.count}`,
+        },
+        {
+          text: `Durée moyenne : ${averageMaintenance.averageDurationDays} jours`,
+        },
+      ];
 
-          { text: '\nTaux des alertes par niveau', style: 'subHeader' },
-          {
-            table: {
-              widths: ['*', '*', '*'],
-              body: [
-                ["Niveau d'alerte", "Nombre d'alertes", 'Pourcentage'],
-                ...alertLevelsData.map((alert) => [
-                  alert.level,
-                  alert.count,
-                  `${alert.percentage}%`,
-                ]),
-              ],
-            },
-          },
-
-          { text: '\nDurée moyenne de maintenance', style: 'subHeader' },
-          {
-            text: `Nombre d'interventions analysées : ${averageMaintenance.count}`,
-          },
-          {
-            text: `Durée moyenne : ${averageMaintenance.averageDurationDays} jours`,
-          },
-        ],
-
+      const docDefinition: TDocumentDefinitions = {
+        content,
         styles: {
           header: {
             alignment: 'center',
@@ -359,10 +371,8 @@ export class ReportsService {
             margin: [0, 10, 0, 5],
           },
         },
-
-        // Add default font configuration
         defaultStyle: {
-          font: 'Roboto',
+          font: 'Helvetica', // Use Helvetica instead of Roboto for better compatibility
         },
       };
 
