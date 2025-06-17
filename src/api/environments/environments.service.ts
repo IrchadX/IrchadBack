@@ -336,6 +336,11 @@ export class EnvironmentsService {
       basicEnvDto;
 
     console.log('🔹 Creating Basic Environment:', basicEnvDto);
+    console.log('🔹 Surface value:', surface, 'Type:', typeof surface);
+    
+    // Convertir explicitement la surface en nombre
+    const surfaceNumber = Number(surface);
+    console.log('🔹 Surface after Number():', surfaceNumber, 'Type:', typeof surfaceNumber);
 
     // create the map
     const map = await this.prisma.map.create({
@@ -351,12 +356,13 @@ export class EnvironmentsService {
         description,
         is_public: isPublic,
         address,
-        // surface,
+        surface: surfaceNumber, // Utiliser la valeur convertie
         map_id: map.id,
       },
     });
 
     console.log('Created Environment:', environment);
+    console.log('🔹 Final surface value:', environment.surface, 'Type:', typeof environment.surface);
 
     // create environment -> user correspondance
     if (userId) {
